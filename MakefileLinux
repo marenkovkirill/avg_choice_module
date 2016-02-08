@@ -1,0 +1,37 @@
+# Environment
+CC=g++
+CCC=g++
+CXX=g++
+
+BUILD_NUMBER = 0
+
+# Constants
+.PHONY: debug
+debug release: MODULE_HEADERS_DIR = "/var/lib/jenkins/workspace/module_headers/current"
+
+INCLUDE_DIR_FLAGS = -I${MODULE_HEADERS_DIR}
+FLAGS_MUTUAL = -Wall -m32 -std=c++11 ${INCLUDE_DIR_FLAGS} -MMD -MP -MF "${OBJECTDIR}/$@.d" -DBUILD_NUMBER=${BUILD_NUMBER}
+
+debug: OBJECTDIR = build/Debug
+release: OBJECTDIR = build/Release
+
+debug release: clean module
+
+clean:
+	@echo "-------------------------" 
+	rm -rf ${OBJECTDIR}
+
+
+test_db_module.o:  test_db_module.cpp
+	@echo "-------------------------" 
+	mkdir -p ${OBJECTDIR}
+	rm -f "${OBJECTDIR}/$@.d"
+	$(COMPILE.cc) $(FLAGS) -o ${OBJECTDIR}/test_db_module.o test_db_module.cpp
+
+
+module: test_db_module.o
+	@echo "-------------------------" 
+	mkdir -p ${OBJECTDIR}
+	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.so ${OBJECTDIR}/test_db_module.o
+
+

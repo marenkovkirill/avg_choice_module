@@ -4,7 +4,7 @@
 class TestDBModule : public DBModule {
   colorPrintfModuleVA_t *colorPrintf_p;
   ModuleInfo *mi;
-  
+
   public:
     TestDBModule();
     // init
@@ -19,7 +19,7 @@ class TestDBModule : public DBModule {
     void final();
 
     // intepreter - program & lib
-    void readPC(void *buffer, unsigned int buffer_length);
+    void readPC(void *buffer, unsigned int buffer_length) {};
 
     // intepreter - program
     int startProgram(int uniq_index);

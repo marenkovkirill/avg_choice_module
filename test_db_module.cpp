@@ -1,15 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <map>
-
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <stdint.h>
-#include <unistd.h>
-#include <cstdarg>
-#include <cstddef>
-#endif
+#include <stdarg.h>
 
 #include "module.h"
 #include "robot_module.h"
@@ -71,7 +62,7 @@ void TestDBModule::colorPrintf(ConsoleColor colors, const char *mask, ...) {
 }
 
 PREFIX_FUNC_DLL unsigned short getDBModuleApiVersion() {
-  return ROBOT_MODULE_API_VERSION;
+  return DB_MODULE_API_VERSION;
 };
 PREFIX_FUNC_DLL DBModule *getDBModuleObject() {
   return new TestDBModule();

@@ -23,7 +23,7 @@ class TestDBModule : public DBModule {
 
     // intepreter - program
     int startProgram(int uniq_index);
-    RobotData **makeChoise(RobotData** robots_data, unsigned int count_robots);
+    const DBRobotData *makeChoise(const DBRobotData** robots_data, unsigned int count_robots);
     int endProgram(int uniq_index);
 
     // destructor

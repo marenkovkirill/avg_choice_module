@@ -3,7 +3,6 @@
 #include <stdarg.h>
 
 #include "module.h"
-#include "robot_module.h"
 #include "db_module.h"
 
 #include "test_db_module.h"
@@ -43,8 +42,14 @@ void TestDBModule::final() {
 
 int TestDBModule::startProgram(int uniq_index) { return 0; }
 
-RobotData **TestDBModule::makeChoise(RobotData** robots_data, unsigned int count_robots) {
-  return robots_data;
+const DBRobotData *TestDBModule::makeChoise(const DBRobotData** robots_data, unsigned int count_robots) {
+  if (!count_robots) {
+    return NULL;
+  }
+  if (count_robots >= 3) {
+    return robots_data[2];
+  }
+  return robots_data[count_robots-1];
 }
 
 int TestDBModule::endProgram(int uniq_index) { return 0; }

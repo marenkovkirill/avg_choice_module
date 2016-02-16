@@ -67,7 +67,7 @@ void TestDBModule::colorPrintf(ConsoleColor colors, const char *mask, ...) {
 }
 
 PREFIX_FUNC_DLL unsigned short getDBModuleApiVersion() {
-  return DB_MODULE_API_VERSION;
+  return MODULE_API_VERSION;
 };
 PREFIX_FUNC_DLL DBModule *getDBModuleObject() {
   return new TestDBModule();

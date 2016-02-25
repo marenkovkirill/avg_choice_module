@@ -42,7 +42,7 @@ void TestDBModule::final() {
 
 int TestDBModule::startProgram(int uniq_index) { return 0; }
 
-const DBRobotData *TestDBModule::makeChoise(const DBRobotData** robots_data, unsigned int count_robots) {
+const DBRobotData *TestDBModule::makeChoise(const DBFunctionData** function_data, unsigned int count_functions, const DBRobotData** robots_data, unsigned int count_robots) {
   if (!count_robots) {
     return NULL;
   }

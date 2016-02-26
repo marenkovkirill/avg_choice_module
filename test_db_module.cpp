@@ -43,6 +43,21 @@ void TestDBModule::final() {
 int TestDBModule::startProgram(int uniq_index) { return 0; }
 
 const DBRobotData *TestDBModule::makeChoise(const DBFunctionData** function_data, unsigned int count_functions, const DBRobotData** robots_data, unsigned int count_robots) {
+  /*colorPrintf(ConsoleColor(ConsoleColor::gray), "Total functions: %d\n", count_functions);
+  for (unsigned int i = 0; i < count_functions; ++i) {
+    colorPrintf(ConsoleColor(ConsoleColor::gray), "  function: %d\n", i + 1);
+    const DBFunctionData *db_fd = function_data[i];
+      colorPrintf(ConsoleColor(ConsoleColor::gray), "    name: %s\n", db_fd->name);
+      colorPrintf(ConsoleColor(ConsoleColor::gray), "    context_hash: %s\n", db_fd->context_hash);
+      colorPrintf(ConsoleColor(ConsoleColor::gray), "    position: %d\n", db_fd->position);
+      colorPrintf(ConsoleColor(ConsoleColor::gray), "    call_type: %d\n", db_fd->call_type);
+  }
+  colorPrintf(ConsoleColor(ConsoleColor::gray), "Total robots: %d\n", count_robots);
+  for (unsigned int i = 0; i < count_robots; ++i) {
+    const DBRobotData *db_rd = robots_data[i];
+    colorPrintf(ConsoleColor(ConsoleColor::gray), "  %d. %s\n", i + 1, db_rd->robot_uid);
+  }*/
+
   if (!count_robots) {
     return NULL;
   }

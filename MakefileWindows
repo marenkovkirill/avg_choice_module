@@ -8,6 +8,8 @@ MKDIR = "C:\MinGW\msys\1.0\bin\mkdir.exe"
 BUILD_NUMBER = 0
 API_VERSION = current
 
+SQLITE_DIR = "C:\sqlite"
+
 # Constants
 .PHONY: debug
 
@@ -37,4 +39,4 @@ test_db_module.o:  test_db_module.cpp
 module: test_db_module.o
 	@echo "-------------------------" 
 	${MKDIR} -p ${OBJECTDIR}
-	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.dll ${OBJECTDIR}/test_db_module.o
+	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.dll ${OBJECTDIR}/test_db_module.o ${SQLITE_DIR}/sqlite3.c.obj

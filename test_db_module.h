@@ -1,5 +1,8 @@
+#include <sqlite3.h>
 #ifndef TEST_DB_MODULE_H
 #define TEST_DB_MODULE_H
+
+using namespace std;
 
 class TestDBModule : public DBModule {
   colorPrintfModuleVA_t *colorPrintf_p;
@@ -17,6 +20,9 @@ class TestDBModule : public DBModule {
     // intepreter - devices
     int init();
     void final();
+    
+    // db
+    sqlite3 *db;
 
     // intepreter - program & lib
     void readPC(void *buffer, unsigned int buffer_length) {};

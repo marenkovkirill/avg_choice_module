@@ -71,15 +71,15 @@ const DBRobotData *TestDBModule::makeChoise(const DBFunctionData** function_data
       
     // main + funcs
     psqlText[0] = 
-    "select uid from robot_uids ru \n"
-    "join \n"
-    "(select fc.robot_id, \n"
-    " --fc.function_id, \n"
-    " avg(fc.end-fc.start) as avg_time \n"
-    "from function_calls fc \n"
-    "where exists(select 1 from functions f \n"
-    "               where f.id = fc.function_id \n"
-    "		and f.name in (%IN_CLAUSE%/*'debug','test'*/)) \n";
+    "select uid from robot_uids ru\n"
+    "join\n"
+    "(select fc.robot_id,\n"
+    " --fc.function_id,\n"
+    " avg(fc.end-fc.start) as avg_time\n"
+    "from function_calls fc\n"
+    "where exists(select 1 from functions f\n"
+    "               where f.id = fc.function_id\n"
+    "		and f.name in (%IN_CLAUSE%/*'debug','test'*/))\n";
       
     sTmp = (string)"";
     for (uint i = 0; i <= count_functions - 1; i++) {
@@ -94,11 +94,6 @@ const DBRobotData *TestDBModule::makeChoise(const DBFunctionData** function_data
     sTmp = (string)"";
     strIn = (string)"";
     if (count_robots) {
-        psqlText[1] =
-        "and exists (select 1 from robot_uids ru \n"
-        "		where ru.id = fc.robot_id \n"
-        "		and ru.uid in (%IN_CLAUSE%/*'robot-3','robot-1'*/)) \n";
-
         for (uint i = 0; i <= count_robots - 1; i++) {
             if (*robots_data[i] -> robot_uid == 0) {
                 havenulluid = true;
@@ -109,19 +104,23 @@ const DBRobotData *TestDBModule::makeChoise(const DBFunctionData** function_data
             }            
         }
         if (not havenulluid) {
-            strIn = strIn.substr(0,strIn.length()-1);    
+            psqlText[1] =
+            "and exists (select 1 from robot_uids ru\n"
+            "		where ru.id = fc.robot_id\n"
+            "		and ru.uid in (%IN_CLAUSE%/*'robot-3','robot-1'*/))\n";
+            strIn = strIn.substr(0,strIn.length()-1);
             psqlText[1].replace(psqlText[1].find("%IN_CLAUSE%"),11,strIn);    
         }        
     }    
             
     // group by
     psqlText[2] =        
-    "group by fc.robot_id \n"
-    "--,fc.function_id \n"
-    "order by avg_time asc \n"
+    "group by fc.robot_id\n"
+    "--,fc.function_id\n"
+    "order by avg_time asc\n"
     "limit 1\n"    
     ") b\n"
-    "on (ru.id = b.robot_id) \n";    
+    "on (ru.id = b.robot_id)\n";
     
     // concat
     for (uint i = 0; i <= 2; i++) {

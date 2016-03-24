@@ -36,8 +36,7 @@ void *TestDBModule::writePC(unsigned int *buffer_length) {
 
 int TestDBModule::init() {
   //connect to data base here
-  int rc;  
-  rc = sqlite3_open("stats.db", &db);
+  int rc = sqlite3_open("stats.db", &db);
   if( rc ){
     colorPrintf(ConsoleColor(ConsoleColor::red),"Can't open database: %s\n", sqlite3_errmsg(db));
     sqlite3_close(db);
@@ -56,8 +55,7 @@ int TestDBModule::startProgram(int uniq_index) { return 0; }
 const DBRobotData *TestDBModule::makeChoise(const DBFunctionData** function_data, uint count_functions,
                                             const DBRobotData** robots_data, uint count_robots) {
 
-string psqlText;
-psqlText = 
+string psqlText =
 "select uid\n"
 "  from robot_uids ru\n"
 "  join\n"
@@ -78,23 +76,24 @@ psqlText =
 "       ) b\n"
 "    on (ru.id = b.robot_id)\n";
 
-string sTmp;
-sTmp = (string)"";    
-sTmp = "(f.name = '" + (string)(function_data[0] -> name) + "'\n"
-        "and f.position = " + to_string(function_data[0] -> position) + "\n"
-        "and c.hash = '" + (string)(function_data[0] -> context_hash) + "')\n";
-for (uint i = 1; i <= count_functions-1; i++) {
-     sTmp = sTmp + "or (f.name = '" + (string)(function_data[i] -> name) + "'\n"
-                   "    and f.position = " + to_string(function_data[i] -> position) + "\n"
-                   "    and c.hash = '" + (string)(function_data[i] -> context_hash) + "')\n";
+string sTmp = "";
+for (uint i = 0; i <= count_functions-1; i++) {
+    if (i >= 1) {
+        sTmp += "or ";
+    }
+     sTmp += "(f.name = '" + (string)(function_data[i] -> name) + "'\n"
+             " and f.position = " + to_string(function_data[i] -> position) + "\n"
+             " and c.hash = '" + (string)(function_data[i] -> context_hash) + "')\n";
 }
 psqlText.replace(psqlText.find("%FUNCS_CLAUSE%"),14,sTmp);
 
 sTmp = (string)"";
-bool havenulluid;
 if (count_robots) {
+    bool havenulluid = false;
     for (uint i = 0; i <= count_robots - 1; i++) {
-        if (*robots_data[i] -> robot_uid == 0) {
+        if (   *robots_data[i] -> robot_uid == 0
+            or *robots_data[i] -> robot_uid == NULL
+            or (string)(robots_data[i] -> robot_uid) == (string)"") {
             havenulluid = true;
             break;
         } else {
@@ -102,8 +101,7 @@ if (count_robots) {
         }
     }
     if (not havenulluid) {
-        string sTmp2;
-        sTmp2 =
+        string sTmp2 =
         "\n and exists (select 1 from robot_uids ru\n"
         "		where ru.id = fc.robot_id\n"
         "		and ru.uid in (%IN_CLAUSE%))\n";
@@ -117,30 +115,27 @@ if (count_robots) {
   psqlText.replace(psqlText.find("%ROBOTS_CLAUSE%"),15,"");
 }
 
-const char *psqlText2;
-psqlText2 = psqlText.c_str();
-
 int nRow = 0;
 int nCol = 0;
 char *zErrMsg = 0;
-char **pRes = 0;
-if( sqlite3_get_table(db, psqlText2, &pRes, &nRow, &nCol, &zErrMsg) != SQLITE_OK ){
+char **pResSQL = 0;
+if( sqlite3_get_table(db, psqlText.c_str(), &pResSQL, &nRow, &nCol, &zErrMsg) != SQLITE_OK ){
    colorPrintf(ConsoleColor(ConsoleColor::red),"SQL error:\n%s\n", zErrMsg);
    sqlite3_free(zErrMsg);
    return NULL;
 }
 
+const DBRobotData *pRes = NULL;
 if (nCol > 0) {
 for (uint i = 0; i <= count_robots - 1; i++) {
-    if ( (string)(robots_data[i] -> robot_uid) == (string)pRes[1]) {
-        sqlite3_free_table(pRes);
-        return robots_data[i];
+    if ( (string)(robots_data[i] -> robot_uid) == (string)pResSQL[1]) {
+        pRes = robots_data[i];
         }
     }
 }
 
-sqlite3_free_table(pRes);
-return NULL;
+sqlite3_free_table(pResSQL);
+return pRes;
 }
 
 int TestDBModule::endProgram(int uniq_index) { return 0; }

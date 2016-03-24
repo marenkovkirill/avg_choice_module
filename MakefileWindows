@@ -4,19 +4,19 @@ CCC=g++
 CXX=g++
 RM = "C:\MinGW\msys\1.0\bin\rm.exe"
 MKDIR = "C:\MinGW\msys\1.0\bin\mkdir.exe"
+C_COMPILER = "C:\MinGW\bin\cc.exe"
 
 BUILD_NUMBER = 0
 API_VERSION = current
 
 SQLITE_DIR = "C:\sqlite"
-
-# Constants
-.PHONY: debug
-
 MODULE_HEADERS_DIR = "C:\Program Files (x86)\Jenkins\workspace\module_headers\${API_VERSION}"
 
 INCLUDE_DIR_FLAGS = -I${MODULE_HEADERS_DIR}
 FLAGS_MUTUAL = -Wall -m32 -std=c++11 ${INCLUDE_DIR_FLAGS} -MMD -MP -MF "${OBJECTDIR}/$@.d" -DBUILD_NUMBER=${BUILD_NUMBER}
+
+# Constants
+.PHONY: debug
 
 debug: OBJECTDIR = build/Debug_${API_VERSION}
 release: OBJECTDIR = build/Release_${API_VERSION}
@@ -35,8 +35,14 @@ test_db_module.o:  test_db_module.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} -f "${OBJECTDIR}/$@.d"
 	$(COMPILE.cc) $(FLAGS) -o ${OBJECTDIR}/test_db_module.o test_db_module.cpp
-
-module: test_db_module.o
+  
+sqlite3.c.obj:
 	@echo "-------------------------" 
 	${MKDIR} -p ${OBJECTDIR}
-	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.dll ${OBJECTDIR}/test_db_module.o ${SQLITE_DIR}/sqlite3.c.obj
+	${RM} -f "${OBJECTDIR}/$@.d"
+	${C_COMPILER} -o ${OBJECTDIR}/sqlite3.c.obj -c ${SQLITE_DIR}/sqlite3.c
+
+module: test_db_module.o sqlite3.c.obj
+	@echo "-------------------------" 
+	${MKDIR} -p ${OBJECTDIR}
+	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.dll ${OBJECTDIR}/test_db_module.o ${OBJECTDIR}/sqlite3.c.obj

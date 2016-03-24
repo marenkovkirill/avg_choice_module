@@ -6,19 +6,20 @@ CXX=g++
 BUILD_NUMBER = 0
 API_VERSION = current
 
-# Constants
-.PHONY: debug
-
+SQLITE_DIR = "/home/jenkins/sqlite"
 MODULE_HEADERS_DIR = "/var/lib/jenkins/workspace/module_headers/${API_VERSION}"
 
 INCLUDE_DIR_FLAGS = -I${MODULE_HEADERS_DIR}
 FLAGS_MUTUAL = -Wall -m32 -std=c++11 ${INCLUDE_DIR_FLAGS} -MMD -MP -MF "${OBJECTDIR}/$@.d" -DBUILD_NUMBER=${BUILD_NUMBER}
 
+# Constants
+.PHONY: debug
+
 debug: OBJECTDIR = build/Debug_${API_VERSION}
 release: OBJECTDIR = build/Release_${API_VERSION}
 
-debug debug_000: FLAGS = -g ${FLAGS_MUTUAL}
-release release_000: FLAGS = -O3 ${FLAGS_MUTUAL}
+debug: FLAGS = -g ${FLAGS_MUTUAL}
+release: FLAGS = -O3 ${FLAGS_MUTUAL}
 
 debug release: clean module
 
@@ -32,7 +33,13 @@ test_db_module.o:  test_db_module.cpp
 	rm -f "${OBJECTDIR}/$@.d"
 	$(COMPILE.cc) $(FLAGS) -o ${OBJECTDIR}/test_db_module.o test_db_module.cpp
 
-module: test_db_module.o
+sqlite3.c.obj:
+	@echo "-------------------------" 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} -f "${OBJECTDIR}/$@.d"
+	$(COMPILE.cc) -o ${OBJECTDIR}/sqlite3.c.obj -c ${SQLITE_DIR}/sqlite3.c  
+  
+module: test_db_module.o sqlite3.c.obj
 	@echo "-------------------------" 
 	mkdir -p ${OBJECTDIR}
-	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.so ${OBJECTDIR}/test_db_module.o
+	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.so ${OBJECTDIR}/test_db_module.o ${OBJECTDIR}/sqlite3.c.obj

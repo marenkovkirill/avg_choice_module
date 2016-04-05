@@ -15,7 +15,6 @@
 /* For debug only */
 #ifdef IS_DEBUG
     #include <iostream>
-    #include <fstream>
 #endif
 
 /* GLOBALS CONFIG */
@@ -125,10 +124,7 @@ if (count_robots) {
   psqlText.replace(psqlText.find("%ROBOTS_CLAUSE%"),15,"");
 }
 #ifdef IS_DEBUG
-    colorPrintf(ConsoleColor(ConsoleColor::yellow),"SQL statement:\n%s\n", psqlText.c_str());
-    ofstream file;
-    file.open ("exec.log");
-    file << "SQL statement:\n" << psqlText << "\n";
+    colorPrintf(ConsoleColor(ConsoleColor::yellow),"SQL statement:\n%s\n\n", psqlText.c_str());
 #endif
 
 int nRow = 0;
@@ -136,13 +132,12 @@ int nCol = 0;
 char *zErrMsg = 0;
 char **pResSQL = 0;
 if( sqlite3_get_table(db, psqlText.c_str(), &pResSQL, &nRow, &nCol, &zErrMsg) != SQLITE_OK ){
-   colorPrintf(ConsoleColor(ConsoleColor::red),"SQL error:\n%s\n", zErrMsg);
+   colorPrintf(ConsoleColor(ConsoleColor::red),"SQL error:\n%s\n\n", zErrMsg);
    sqlite3_free(zErrMsg);
    return NULL;
 }
 #ifdef IS_DEBUG
     colorPrintf(ConsoleColor(ConsoleColor::yellow),"SQL result:\n%s\n\n", pResSQL[1]);    
-    file << "SQL result:\n" << pResSQL[1] << "\n\n";
 #endif
 
 const DBRobotData *pRes = NULL;
@@ -157,8 +152,6 @@ for (uint i = 0; i <= count_robots - 1; i++) {
 sqlite3_free_table(pResSQL);
 #ifdef IS_DEBUG
     colorPrintf(ConsoleColor(ConsoleColor::yellow),"MakeChoice result:\n%s\n\n", pRes -> robot_uid);
-    file << "MakeChoice result:\n" << pRes -> robot_uid << "\n\n";
-    file.close();
 #endif
 return pRes;
 }

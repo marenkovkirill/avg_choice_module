@@ -1,16 +1,18 @@
+/* INCLUDE CONFIG */
+/* General */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <sqlite3.h>
 #include <string>
+#include <stringC11.h>
 
+/* RCML */
 #include "module.h"
 #include "db_module.h"
-
 #include "test_db_module.h"
 
 /* GLOBALS CONFIG */
-
 #define IID "RCT.Test_db_module_v101"
 typedef unsigned int uint;
 
@@ -85,6 +87,7 @@ for (uint i = 0; i <= count_functions-1; i++) {
              " and f.position = " + to_string(function_data[i] -> position) + "\n"
              " and c.hash = '" + (string)(function_data[i] -> context_hash) + "')\n";
 }
+sTmp = sTmp.substr(0, sTmp.length()-1);
 psqlText.replace(psqlText.find("%FUNCS_CLAUSE%"),14,sTmp);
 
 sTmp = (string)"";
@@ -107,6 +110,7 @@ if (count_robots) {
         "		and ru.uid in (%IN_CLAUSE%))\n";
         sTmp = sTmp.substr(0,sTmp.length()-1);
         sTmp2.replace(sTmp2.find("%IN_CLAUSE%"),11,sTmp);
+        sTmp2 = sTmp2.substr(0, sTmp2.length()-1);
         psqlText.replace(psqlText.find("%ROBOTS_CLAUSE%"),15,sTmp2);
     } else {
       psqlText.replace(psqlText.find("%ROBOTS_CLAUSE%"),15,"");
@@ -114,16 +118,22 @@ if (count_robots) {
 } else {
   psqlText.replace(psqlText.find("%ROBOTS_CLAUSE%"),15,"");
 }
+#ifdef IS_DEBUG
+    colorPrintf(ConsoleColor(ConsoleColor::yellow),"SQL statement:\n%s\n\n", psqlText.c_str());
+#endif
 
 int nRow = 0;
 int nCol = 0;
 char *zErrMsg = 0;
 char **pResSQL = 0;
 if( sqlite3_get_table(db, psqlText.c_str(), &pResSQL, &nRow, &nCol, &zErrMsg) != SQLITE_OK ){
-   colorPrintf(ConsoleColor(ConsoleColor::red),"SQL error:\n%s\n", zErrMsg);
+   colorPrintf(ConsoleColor(ConsoleColor::red),"SQL error:\n%s\n\n", zErrMsg);
    sqlite3_free(zErrMsg);
    return NULL;
 }
+#ifdef IS_DEBUG
+    colorPrintf(ConsoleColor(ConsoleColor::yellow),"SQL result:\n%s\n\n", pResSQL[1]);    
+#endif
 
 const DBRobotData *pRes = NULL;
 if (nCol > 0) {
@@ -135,10 +145,13 @@ for (uint i = 0; i <= count_robots - 1; i++) {
 }
 
 sqlite3_free_table(pResSQL);
+#ifdef IS_DEBUG
+    colorPrintf(ConsoleColor(ConsoleColor::yellow),"MakeChoice result:\n%s\n\n", pRes -> robot_uid);
+#endif
 return pRes;
 }
 
-int TestDBModule::endProgram(int uniq_index) { return 0; }
+int TestDBModule::endProgram(int unique_index) { return 0; }
 
 void TestDBModule::destroy() {
   delete mi;

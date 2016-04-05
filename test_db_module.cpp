@@ -12,11 +12,6 @@
 #include "db_module.h"
 #include "test_db_module.h"
 
-/* For debug only */
-#ifdef IS_DEBUG
-    #include <iostream>
-#endif
-
 /* GLOBALS CONFIG */
 #define IID "RCT.Test_db_module_v101"
 typedef unsigned int uint;

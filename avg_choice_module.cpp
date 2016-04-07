@@ -55,7 +55,7 @@ void AvgChoiceModule::final() {
 
 int AvgChoiceModule::startProgram(int uniq_index) { return 0; }
 
-const DBRobotData *AvgChoiceModule::makeChoice(const DBFunctionData** function_data, uint count_functions,
+const DBRobotData *AvgChoiceModule::makeChoise(const DBFunctionData** function_data, uint count_functions,
                                             const DBRobotData** robots_data, uint count_robots) {
 
 string psqlText =

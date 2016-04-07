@@ -29,7 +29,7 @@ class AvgChoiceModule : public DBModule {
 
     // intepreter - program
     int startProgram(int uniq_index);
-    const DBRobotData *makeChoice(const DBFunctionData** function_data, unsigned int count_functions, const DBRobotData** robots_data, unsigned int count_robots);
+    const DBRobotData *makeChoise(const DBFunctionData** function_data, unsigned int count_functions, const DBRobotData** robots_data, unsigned int count_robots);
     int endProgram(int uniq_index);
 
     // destructor

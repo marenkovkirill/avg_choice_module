@@ -11,7 +11,7 @@
 /* RCML */
 #include "module.h"
 #include "db_module.h"
-#include "avg_choise_module.h"
+#include "avg_choiсe_module.h"
 
 /* GLOBALS CONFIG */
 #define IID "RCT.AVG_choise_module_v101"

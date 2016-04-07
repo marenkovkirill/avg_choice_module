@@ -1,15 +1,15 @@
 #include <sqlite3.h>
-#ifndef TEST_DB_MODULE_H
-#define TEST_DB_MODULE_H
+#ifndef AVG_CHOISE_MODULE_H
+#define AVG_CHOISE_MODULE_H
 
 using namespace std;
 
-class TestDBModule : public DBModule {
+class AvgChoiseModule : public DBModule {
   colorPrintfModuleVA_t *colorPrintf_p;
   ModuleInfo *mi;
 
   public:
-    TestDBModule();
+    AvgChoiseModule();
     // init
     const struct ModuleInfo& getModuleInfo();
     void prepare(colorPrintfModule_t *colorPrintf_p, colorPrintfModuleVA_t *colorPrintfVA_p);
@@ -34,9 +34,9 @@ class TestDBModule : public DBModule {
 
     // destructor
     void destroy();
-    ~TestDBModule() {}
+    ~AvgChoiseModule() {}
 
   void colorPrintf(ConsoleColor colors, const char *mask, ...);
 };
 
-#endif /* TEST_DB_MODULE_H */
+#endif /* AVG_CHOISE_MODULE_H */

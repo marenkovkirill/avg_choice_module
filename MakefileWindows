@@ -30,11 +30,11 @@ clean:
 	@echo "-------------------------" 
 	${RM} -rf ${OBJECTDIR}
 
-test_db_module.o:  test_db_module.cpp
+avg_choise_module.o:  avg_choise_module.cpp
 	@echo "-------------------------" 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} -f "${OBJECTDIR}/$@.d"
-	$(COMPILE.cc) $(FLAGS) -o ${OBJECTDIR}/test_db_module.o test_db_module.cpp
+	$(COMPILE.cc) $(FLAGS) -o ${OBJECTDIR}/avg_choise_module.o avg_choise_module.cpp
   
 sqlite3.c.obj:
 	@echo "-------------------------" 
@@ -42,7 +42,7 @@ sqlite3.c.obj:
 	${RM} -f "${OBJECTDIR}/$@.d"
 	${C_COMPILER} -o ${OBJECTDIR}/sqlite3.c.obj -c ${SQLITE_DIR}/sqlite3.c
 
-module: test_db_module.o sqlite3.c.obj
+module: avg_choise_module.o sqlite3.c.obj
 	@echo "-------------------------" 
 	${MKDIR} -p ${OBJECTDIR}
-	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.dll ${OBJECTDIR}/test_db_module.o ${OBJECTDIR}/sqlite3.c.obj
+	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.dll ${OBJECTDIR}/avg_choise_module.o ${OBJECTDIR}/sqlite3.c.obj

@@ -10,13 +10,13 @@
 /* RCML */
 #include "module.h"
 #include "db_module.h"
-#include "test_db_module.h"
+#include "avg_choise_module.h"
 
 /* GLOBALS CONFIG */
-#define IID "RCT.Test_db_module_v101"
+#define IID "RCT.AVG_choise_module_v101"
 typedef unsigned int uint;
 
-TestDBModule::TestDBModule() {
+AvgChoiseModule::AvgChoiseModule() {
   mi = new ModuleInfo;
   mi->uid = IID;
   mi->mode = ModuleInfo::Modes::PROD;
@@ -24,19 +24,19 @@ TestDBModule::TestDBModule() {
   mi->digest = NULL;
 }
 
-const struct ModuleInfo &TestDBModule::getModuleInfo() { return *mi; }
+const struct ModuleInfo &AvgChoiseModule::getModuleInfo() { return *mi; }
 
-void TestDBModule::prepare(colorPrintfModule_t *colorPrintf_p,
+void AvgChoiseModule::prepare(colorPrintfModule_t *colorPrintf_p,
                               colorPrintfModuleVA_t *colorPrintfVA_p) {
   this->colorPrintf_p = colorPrintfVA_p;
 }
 
-void *TestDBModule::writePC(unsigned int *buffer_length) {
+void *AvgChoiseModule::writePC(unsigned int *buffer_length) {
   (*buffer_length) = 0;
   return NULL;
 }
 
-int TestDBModule::init() {
+int AvgChoiseModule::init() {
   //connect to data base here
   int rc = sqlite3_open("stats.db", &db);
   if( rc ){
@@ -47,14 +47,14 @@ int TestDBModule::init() {
   return 0;
 }
 
-void TestDBModule::final() {
+void AvgChoiseModule::final() {
   //disconnect from data base here
   sqlite3_close(db);  
 }
 
-int TestDBModule::startProgram(int uniq_index) { return 0; }
+int AvgChoiseModule::startProgram(int uniq_index) { return 0; }
 
-const DBRobotData *TestDBModule::makeChoise(const DBFunctionData** function_data, uint count_functions,
+const DBRobotData *AvgChoiseModule::makeChoise(const DBFunctionData** function_data, uint count_functions,
                                             const DBRobotData** robots_data, uint count_robots) {
 
 string psqlText =
@@ -151,14 +151,14 @@ sqlite3_free_table(pResSQL);
 return pRes;
 }
 
-int TestDBModule::endProgram(int unique_index) { return 0; }
+int AvgChoiseModule::endProgram(int unique_index) { return 0; }
 
-void TestDBModule::destroy() {
+void AvgChoiseModule::destroy() {
   delete mi;
   delete this;
 }
 
-void TestDBModule::colorPrintf(ConsoleColor colors, const char *mask, ...) {
+void AvgChoiseModule::colorPrintf(ConsoleColor colors, const char *mask, ...) {
   va_list args;
   va_start(args, mask);
   (*colorPrintf_p)(this, colors, mask, args);
@@ -169,5 +169,5 @@ PREFIX_FUNC_DLL unsigned short getDBModuleApiVersion() {
   return MODULE_API_VERSION;
 };
 PREFIX_FUNC_DLL DBModule *getDBModuleObject() {
-  return new TestDBModule();
+  return new AvgChoiseModule();
 }

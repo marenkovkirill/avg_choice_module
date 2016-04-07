@@ -5,7 +5,8 @@
 #include <stdarg.h>
 #include <sqlite3.h>
 #include <string>
-#include <stringC11.h>
+
+#include "stringC11.h"
 
 /* RCML */
 #include "module.h"

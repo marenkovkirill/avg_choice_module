@@ -17,7 +17,7 @@
 #define IID "RCT.AVG_choise_module_v101"
 typedef unsigned int uint;
 
-AvgChoiseModule::AvgChoiseModule() {
+AvgChoiceModule::AvgChoiceModule() {
   mi = new ModuleInfo;
   mi->uid = IID;
   mi->mode = ModuleInfo::Modes::PROD;
@@ -25,19 +25,19 @@ AvgChoiseModule::AvgChoiseModule() {
   mi->digest = NULL;
 }
 
-const struct ModuleInfo &AvgChoiseModule::getModuleInfo() { return *mi; }
+const struct ModuleInfo &AvgChoiceModule::getModuleInfo() { return *mi; }
 
-void AvgChoiseModule::prepare(colorPrintfModule_t *colorPrintf_p,
+void AvgChoiceModule::prepare(colorPrintfModule_t *colorPrintf_p,
                               colorPrintfModuleVA_t *colorPrintfVA_p) {
   this->colorPrintf_p = colorPrintfVA_p;
 }
 
-void *AvgChoiseModule::writePC(unsigned int *buffer_length) {
+void *AvgChoiceModule::writePC(unsigned int *buffer_length) {
   (*buffer_length) = 0;
   return NULL;
 }
 
-int AvgChoiseModule::init() {
+int AvgChoiceModule::init() {
   //connect to data base here
   int rc = sqlite3_open("stats.db", &db);
   if( rc ){
@@ -48,14 +48,14 @@ int AvgChoiseModule::init() {
   return 0;
 }
 
-void AvgChoiseModule::final() {
+void AvgChoiceModule::final() {
   //disconnect from data base here
   sqlite3_close(db);  
 }
 
-int AvgChoiseModule::startProgram(int uniq_index) { return 0; }
+int AvgChoiceModule::startProgram(int uniq_index) { return 0; }
 
-const DBRobotData *AvgChoiseModule::makeChoise(const DBFunctionData** function_data, uint count_functions,
+const DBRobotData *AvgChoiceModule::makeChoice(const DBFunctionData** function_data, uint count_functions,
                                             const DBRobotData** robots_data, uint count_robots) {
 
 string psqlText =
@@ -152,14 +152,14 @@ sqlite3_free_table(pResSQL);
 return pRes;
 }
 
-int AvgChoiseModule::endProgram(int unique_index) { return 0; }
+int AvgChoiceModule::endProgram(int unique_index) { return 0; }
 
-void AvgChoiseModule::destroy() {
+void AvgChoiceModule::destroy() {
   delete mi;
   delete this;
 }
 
-void AvgChoiseModule::colorPrintf(ConsoleColor colors, const char *mask, ...) {
+void AvgChoiceModule::colorPrintf(ConsoleColor colors, const char *mask, ...) {
   va_list args;
   va_start(args, mask);
   (*colorPrintf_p)(this, colors, mask, args);
@@ -170,5 +170,5 @@ PREFIX_FUNC_DLL unsigned short getDBModuleApiVersion() {
   return MODULE_API_VERSION;
 };
 PREFIX_FUNC_DLL DBModule *getDBModuleObject() {
-  return new AvgChoiseModule();
+  return new AvgChoiceModule();
 }

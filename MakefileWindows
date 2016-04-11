@@ -45,4 +45,4 @@ sqlite3.c.obj:
 module: avg_choice_module.o sqlite3.c.obj
 	@echo "-------------------------" 
 	${MKDIR} -p ${OBJECTDIR}
-	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/test_module.dll ${OBJECTDIR}/avg_choice_module.o ${OBJECTDIR}/sqlite3.c.obj
+	${LINK.cc} -shared -m32 -o ${OBJECTDIR}/avg_module.dll ${OBJECTDIR}/avg_choice_module.o ${OBJECTDIR}/sqlite3.c.obj

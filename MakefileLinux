@@ -37,7 +37,7 @@ sqlite3.c.obj:
 	@echo "-------------------------" 
 	mkdir -p ${OBJECTDIR}
 	rm -f "${OBJECTDIR}/$@.d"
-	$(COMPILE.cc) -o ${OBJECTDIR}/sqlite3.c.obj -c ${SQLITE_DIR}/sqlite3.c  
+	gcc -o ${OBJECTDIR}/sqlite3.c.obj -c ${SQLITE_DIR}/sqlite3.c  
   
 module: avg_choice_module.o sqlite3.c.obj
 	@echo "-------------------------" 

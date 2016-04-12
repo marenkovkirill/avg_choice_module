@@ -6,7 +6,9 @@
 #include <sqlite3.h>
 #include <string>
 
+#ifdef _WIN32
 #include "stringC11.h"
+#endif
 
 /* RCML */
 #include "module.h"

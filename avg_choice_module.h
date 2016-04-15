@@ -4,7 +4,7 @@
 
 using namespace std;
 
-class AvgChoiceModule : public DBModule {
+class AvgChoiceModule : public ChoiceModule {
   colorPrintfModuleVA_t *colorPrintf_p;
   ModuleInfo *mi;
 
@@ -25,18 +25,18 @@ class AvgChoiceModule : public DBModule {
     sqlite3 *db;
 
     // intepreter - program & lib
-    void readPC(void *buffer, unsigned int buffer_length) {};
+    int readPC(int pc_index, void *buffer, unsigned int buffer_length);
 
     // intepreter - program
-    int startProgram(int uniq_index);
-    const DBRobotData *makeChoise(const DBFunctionData** function_data, unsigned int count_functions, const DBRobotData** robots_data, unsigned int count_robots);
-    int endProgram(int uniq_index);
+    int startProgram(int run_index, int pc_index);
+    const ChoiceRobotData *makeChoice(const ChoiceFunctionData** function_data, unsigned int count_functions, const ChoiceRobotData** robots_data, unsigned int count_robots);
+    int endProgram(int run_index);
 
     // destructor
     void destroy();
     ~AvgChoiceModule() {}
 
-  void colorPrintf(ConsoleColor colors, const char *mask, ...);
+    void colorPrintf(ConsoleColor colors, const char *mask, ...);
 };
 
 #endif /* AVG_CHOICE_MODULE_H */

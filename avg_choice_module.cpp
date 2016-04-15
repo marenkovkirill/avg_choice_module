@@ -12,7 +12,7 @@
 
 /* RCML */
 #include "module.h"
-#include "db_module.h"
+#include "choice_module.h"
 #include "avg_choice_module.h"
 
 /* GLOBALS CONFIG */
@@ -55,10 +55,12 @@ void AvgChoiceModule::final() {
   sqlite3_close(db);  
 }
 
-int AvgChoiceModule::startProgram(int uniq_index) { return 0; }
+int AvgChoiceModule::readPC(int pc_index, void *buffer, unsigned int buffer_length) { return 0; }
 
-const DBRobotData *AvgChoiceModule::makeChoise(const DBFunctionData** function_data, uint count_functions,
-                                            const DBRobotData** robots_data, uint count_robots) {
+int AvgChoiceModule::startProgram(int run_index, int pc_index) { return 0; }
+
+const ChoiceRobotData *AvgChoiceModule::makeChoice(const ChoiceFunctionData** function_data, uint count_functions,
+                                            const ChoiceRobotData** robots_data, uint count_robots) {
 
 string psqlText =
 "select uid\n"
@@ -138,7 +140,7 @@ if( sqlite3_get_table(db, psqlText.c_str(), &pResSQL, &nRow, &nCol, &zErrMsg) !=
     colorPrintf(ConsoleColor(ConsoleColor::yellow),"SQL result:\n%s\n\n", pResSQL[1]);    
 #endif
 
-const DBRobotData *pRes = NULL;
+const ChoiceRobotData *pRes = NULL;
 if (nCol > 0) {
 for (uint i = 0; i <= count_robots - 1; i++) {
     if ( (string)(robots_data[i] -> robot_uid) == (string)pResSQL[1]) {
@@ -154,7 +156,7 @@ sqlite3_free_table(pResSQL);
 return pRes;
 }
 
-int AvgChoiceModule::endProgram(int unique_index) { return 0; }
+int AvgChoiceModule::endProgram(int run_index) { return 0; }
 
 void AvgChoiceModule::destroy() {
   delete mi;
@@ -168,9 +170,9 @@ void AvgChoiceModule::colorPrintf(ConsoleColor colors, const char *mask, ...) {
   va_end(args);
 }
 
-PREFIX_FUNC_DLL unsigned short getDBModuleApiVersion() {
+PREFIX_FUNC_DLL unsigned short getChoiceModuleApiVersion() {
   return MODULE_API_VERSION;
 };
-PREFIX_FUNC_DLL DBModule *getDBModuleObject() {
+PREFIX_FUNC_DLL ChoiceModule *getChoiceModuleObject() {
   return new AvgChoiceModule();
 }

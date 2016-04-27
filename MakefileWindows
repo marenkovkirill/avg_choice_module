@@ -9,7 +9,7 @@ C_COMPILER = "C:\MinGW\bin\cc.exe"
 BUILD_NUMBER = 0
 API_VERSION = current
 
-SIMPLEINI_DIR = "C:\Program Files (x86)\Jenkins\workspace\RCML_build\simpleini"
+SIMPLEINI_DIR = "C:\Program Files (x86)\Jenkins\workspace\simpleini"
 SQLITE_DIR = "C:\sqlite"
 MODULE_HEADERS_DIR = "C:\Program Files (x86)\Jenkins\workspace\module_headers\${API_VERSION}"
 

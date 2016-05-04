@@ -82,25 +82,33 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(
     const ChoiceFunctionData **function_data, uint count_functions,
     const ChoiceRobotData **robots_data, uint count_robots) {
   string sql_query =
-      "select uid\n"
+      "with funcs as (select f.id\n"
+      "                 from functions f\n"
+      "                 join contexts c\n"
+      "                   on f.context_id = c.id\n"
+      "                where (%FUNCS_CLAUSE%"
+      "                       )\n"
+      "		),\n"
+      "     robots as (select ru.id\n"
+      "                  from robot_uids ru\n"
+      "                  join sources s\n"
+      "                    on (ru.source_id = s.id)\n"
+      "	          where (%ROBOTS_CLAUSE%"
+      "                        )\n"
+      "                ),\n"
+      "     fc as (select fc.robot_id, count(distinct funcs.id) as f_cnt, "
+      "avg(fc.end-fc.start) as avg_time\n"
+      "              from function_calls fc\n"
+      "              join robots on (fc.robot_id = robots.id)\n"
+      "              join funcs on (funcs.id = fc.function_id)\n"
+      "             group by fc.robot_id\n"
+      "            )\n"
+      "select ru.uid\n"
       "  from robot_uids ru\n"
-      "  join\n"
-      "      (select fc.robot_id,\n"
-      "              avg(fc.end-fc.start) as avg_time\n"
-      "         from function_calls fc\n"
-      "        where exists(select 1\n"
-      "                       from functions f\n"
-      "                       join contexts c\n"
-      "                         on f.context_id = c.id\n"
-      "                      where f.id = fc.function_id\n"
-      "                        and ( %FUNCS_CLAUSE%"
-      "                             )\n"
-      "                     ) %ROBOTS_CLAUSE%"
-      "        group by fc.robot_id\n"
-      "        order by avg_time asc\n"
-      "        limit 1\n"
-      "       ) b\n"
-      "    on (ru.id = b.robot_id)\n";
+      "  left join fc\n"
+      "    on (fc.robot_id = ru.id)\n"
+      " order by fc.f_cnt,fc.avg_time\n"
+      " limit 1\n";
 
   string functions_clause = "";
   for (uint i = 0; i < count_functions; i++) {
@@ -108,25 +116,19 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(
       functions_clause += "or ";
     }
     functions_clause += "(f.name = '" + (string)(function_data[i]->name) +
-                        "'\n"
-                        " and f.position = " +
-                        to_string(function_data[i]->position) +
-                        "\n"
-                        " and c.hash = '" +
-                        (string)(function_data[i]->context_hash) + "')\n";
+              "'\n"
+              " and f.position = " +
+              to_string(function_data[i]->position) +
+              "\n"
+              " and c.hash = '" +
+              (string)(function_data[i]->context_hash) + "')\n";
   }
   sql_query.replace(sql_query.find("%FUNCS_CLAUSE%"), 14, functions_clause);
 
   if (count_robots) {
     string robots_clause =
-        "\n and exists (select 1\n"
-        "                 from robot_uids ru\n"
-        "                 join sources s\n"
-        "                   on (ru.source_id = s.id)\n"
-        "	             where ru.id = fc.robot_id\n"
-        "		       and (   %ROBOT_UIDS%\n"
-        "                       or %SOURCE_HASHES%\n"
-        "                       ))\n";
+        "   %ROBOT_UIDS%\n"
+        "or %SOURCE_HASHES%\n";
     string uids = "";
     string hashes = "";
     for (uint i = 0; i < count_robots; i++) {
@@ -151,7 +153,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(
     robots_clause.replace(robots_clause.find("%SOURCE_HASHES%"), 15, hashes);
     sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, robots_clause);
   } else {
-    sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, "");
+    sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, " 1=1\n");
   }
 #ifdef IS_DEBUG
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL statement:\n%s\n\n",

@@ -153,7 +153,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(
     robots_clause.replace(robots_clause.find("%SOURCE_HASHES%"), 15, hashes);
     sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, robots_clause);
   } else {
-    sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, "");
+    sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, " 1=1\n");
   }
 #ifdef IS_DEBUG
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL statement:\n%s\n\n",

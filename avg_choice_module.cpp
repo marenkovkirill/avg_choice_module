@@ -1,9 +1,9 @@
 /* INCLUDE CONFIG */
 /* General */
-#include <sqlite3.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <sqlite3.h>
 #include <string>
 
 #ifdef _WIN32
@@ -13,9 +13,9 @@
 #include "SimpleIni.h"
 
 /* RCML */
-#include "avg_choice_module.h"
-#include "choice_module.h"
 #include "module.h"
+#include "choice_module.h"
+#include "avg_choice_module.h"
 
 /* GLOBALS CONFIG */
 #define IID "RCT.AVG_choise_module_v101"
@@ -81,6 +81,9 @@ int AvgChoiceModule::startProgram(int run_index, int pc_index) { return 0; }
 const ChoiceRobotData *AvgChoiceModule::makeChoice(
     const ChoiceFunctionData **function_data, uint count_functions,
     const ChoiceRobotData **robots_data, uint count_robots) {
+  if (not (count_functions && count_robots)) {
+     return NULL; 
+  } else {  
   string sql_query =
       "with funcs as (select f.id\n"
       "                 from functions f\n"
@@ -133,45 +136,42 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(
   }
   sql_query.replace(sql_query.find("%FUNCS_CLAUSE%"), 14, functions_clause);
 
-  string robots_table = "";
-  if (count_robots) {
-    uint uid_count = 0;
-    string robots_clause =
-        "   %ROBOT_UIDS%\n"
-        "or %SOURCE_HASHES%\n";
-    string uids = "";
-    string hashes = "";
-    for (uint i = 0; i < count_robots; i++) {
-      if (robots_data[i]->robot_uid == 0 or robots_data[i]->robot_uid == NULL or
-          (string)(robots_data[i]->robot_uid) == (string) "") {
-        hashes += "'" + (string)(robots_data[i]->module_data->hash) + "',";
-      } else {
-        uid_count += 1;
-        uids += "'" + (string)(robots_data[i]->robot_uid) + "',";
-        if (uid_count > 1) {
-          robots_table += "UNION\n";
-        }
-        robots_table +=
-            "select '" + (string)(robots_data[i]->robot_uid) + "' as uid\n";
-      }
-    }
-    if (uids == (string) "") {
-      uids = "1=0";
-    } else {
-      uids = "ru.uid in (" + uids.substr(0, uids.length() - 1) + ")";
-    }
-    if (hashes == (string) "") {
-      hashes = "1=0";
-    } else {
-      hashes = "s.hash in (" + hashes.substr(0, hashes.length() - 1) + ")";
-    }
-    robots_clause.replace(robots_clause.find("%ROBOT_UIDS%"), 12, uids);
-    robots_clause.replace(robots_clause.find("%SOURCE_HASHES%"), 15, hashes);
-    sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, robots_clause);
-    sql_query.replace(sql_query.find("%ROBOTS_TABLE%"), 14, robots_table);
+  string robots_table = "";  
+uint uid_count = 0;
+string robots_clause =
+    "   %ROBOT_UIDS%\n"
+    "or %SOURCE_HASHES%\n";
+string uids = "";
+string hashes = "";
+for (uint i = 0; i < count_robots; i++) {
+  if (robots_data[i]->robot_uid == 0 or robots_data[i]->robot_uid == NULL or
+      (string)(robots_data[i]->robot_uid) == (string) "") {
+    hashes += "'" + (string)(robots_data[i]->module_data->hash) + "',";
   } else {
-    sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, " 1=1\n");
+    uid_count += 1;
+    uids += "'" + (string)(robots_data[i]->robot_uid) + "',";
+    if (uid_count > 1) {
+      robots_table += "UNION\n";
+    }
+    robots_table +=
+        "select '" + (string)(robots_data[i]->robot_uid) + "' as uid\n";
   }
+}
+if (uids == (string) "") {
+  uids = "1=0";
+} else {
+  uids = "ru.uid in (" + uids.substr(0, uids.length() - 1) + ")";
+}
+if (hashes == (string) "") {
+  hashes = "1=0";
+} else {
+  hashes = "s.hash in (" + hashes.substr(0, hashes.length() - 1) + ")";
+}
+robots_clause.replace(robots_clause.find("%ROBOT_UIDS%"), 12, uids);
+robots_clause.replace(robots_clause.find("%SOURCE_HASHES%"), 15, hashes);
+sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, robots_clause);
+sql_query.replace(sql_query.find("%ROBOTS_TABLE%"), 14, robots_table);
+  
 #ifdef IS_DEBUG
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL statement:\n%s\n\n",
               sql_query.c_str());
@@ -212,6 +212,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(
               result.c_str());
 #endif
   return p_res;
+}  
 }
 
 int AvgChoiceModule::endProgram(int run_index) { return 0; }

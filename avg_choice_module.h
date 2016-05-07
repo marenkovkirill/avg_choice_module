@@ -30,7 +30,7 @@ class AvgChoiceModule : public ChoiceModule {
 
   // intepreter - program
   int startProgram(int run_index, int pc_index);
-  const ChoiceRobotData *makeChoice(const ChoiceFunctionData **function_data,
+  const ChoiceRobotData *makeChoice(int run_index, const ChoiceFunctionData **function_data,
                                     unsigned int count_functions,
                                     const ChoiceRobotData **robots_data,
                                     unsigned int count_robots);

@@ -78,7 +78,7 @@ int AvgChoiceModule::readPC(int pc_index, void *buffer,
 
 int AvgChoiceModule::startProgram(int run_index, int pc_index) { return 0; }
 
-const ChoiceRobotData *AvgChoiceModule::makeChoice(
+const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index, 
     const ChoiceFunctionData **function_data, uint count_functions,
     const ChoiceRobotData **robots_data, uint count_robots) {
   if (not (count_functions && count_robots)) {

@@ -19,7 +19,7 @@ FLAGS_MUTUAL = -Wall -m32 -std=c++11 ${INCLUDE_DIR_FLAGS} -MMD -MP -MF "${OBJECT
 debug: OBJECTDIR = build/Debug_${API_VERSION}
 release: OBJECTDIR = build/Release_${API_VERSION}
 
-debug: FLAGS = -g ${FLAGS_MUTUAL}
+debug: FLAGS = -g ${FLAGS_MUTUAL} -DIS_DEBUG
 release: FLAGS = -O3 ${FLAGS_MUTUAL}
 
 debug release: clean module

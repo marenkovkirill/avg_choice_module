@@ -53,23 +53,26 @@ int AvgChoiceModule::init() {
     return 1;
   }
 
-  const char *db_path = ini.GetValue("statisctic", "db_path", NULL);
-  if (!db_path) {
+  db_path = ini.GetValue("statisctic", "db_path", NULL);
+  if (db_path.empty()) {
     colorPrintf(ConsoleColor(ConsoleColor::red), "Can't read db_path value");
     return 1;
   }
 
-  int rc = sqlite3_open(db_path, &db);
+  sqlite3 *db;
+  int rc = sqlite3_open(db_path.c_str(), &db);
   if (rc) {
     colorPrintf(ConsoleColor(ConsoleColor::red), "Can't open database: %s\n",
                 sqlite3_errmsg(db));
     sqlite3_close(db);
     return (1);
   }
+  sqlite3_close(db);
+
   return 0;
 }
 
-void AvgChoiceModule::final() { sqlite3_close(db); }
+void AvgChoiceModule::final() {}
 
 int AvgChoiceModule::readPC(int pc_index, void *buffer,
                             unsigned int buffer_length) {
@@ -78,12 +81,22 @@ int AvgChoiceModule::readPC(int pc_index, void *buffer,
 
 int AvgChoiceModule::startProgram(int run_index, int pc_index) { return 0; }
 
-const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index, 
+const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const ChoiceFunctionData **function_data, uint count_functions,
     const ChoiceRobotData **robots_data, uint count_robots) {
   if (not (count_functions && count_robots)) {
-     return NULL; 
-  } else {  
+     return NULL;
+  }
+
+  sqlite3 *db;
+  int rc = sqlite3_open(db_path.c_str(), &db);
+  if (rc) {
+    colorPrintf(ConsoleColor(ConsoleColor::red), "Can't open database: %s\n",
+                sqlite3_errmsg(db));
+    sqlite3_close(db);
+    return NULL;
+  }
+
   string sql_query =
       "with funcs as (select f.id\n"
       "                 from functions f\n"
@@ -136,7 +149,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   }
   sql_query.replace(sql_query.find("%FUNCS_CLAUSE%"), 14, functions_clause);
 
-  string robots_table = "";  
+  string robots_table = "";
 uint uid_count = 0;
 string robots_clause =
     "   %ROBOT_UIDS%\n"
@@ -171,7 +184,7 @@ robots_clause.replace(robots_clause.find("%ROBOT_UIDS%"), 12, uids);
 robots_clause.replace(robots_clause.find("%SOURCE_HASHES%"), 15, hashes);
 sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, robots_clause);
 sql_query.replace(sql_query.find("%ROBOTS_TABLE%"), 14, robots_table);
-  
+
 #ifdef IS_DEBUG
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL statement:\n%s\n\n",
               sql_query.c_str());
@@ -211,8 +224,9 @@ sql_query.replace(sql_query.find("%ROBOTS_TABLE%"), 14, robots_table);
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "MakeChoice result:\n%s\n\n",
               result.c_str());
 #endif
+  sqlite3_close(db);
+
   return p_res;
-}  
 }
 
 int AvgChoiceModule::endProgram(int run_index) { return 0; }

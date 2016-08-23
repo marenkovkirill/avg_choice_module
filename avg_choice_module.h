@@ -23,7 +23,7 @@ class AvgChoiceModule : public ChoiceModule {
   void final();
 
   // db
-  sqlite3 *db;
+  std::string db_path;
 
   // intepreter - program & lib
   int readPC(int pc_index, void *buffer, unsigned int buffer_length);

@@ -134,6 +134,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
       " order by pos, f_cnt, avg_time\n"
       " limit 1\n";
 
+
   string functions_clause = "";
   for (uint i = 0; i < count_functions; i++) {
     if (i >= 1) {
@@ -199,6 +200,7 @@ sql_query.replace(sql_query.find("%ROBOTS_TABLE%"), 14, robots_table);
     colorPrintf(ConsoleColor(ConsoleColor::red), "SQL error:\n%s\n\n",
                 error_message);
     sqlite3_free(error_message);
+    sqlite3_close(db);
     return NULL;
   }
 #ifdef IS_DEBUG
@@ -215,7 +217,6 @@ sql_query.replace(sql_query.find("%ROBOTS_TABLE%"), 14, robots_table);
     }
   }
 
-  sqlite3_free_table(sql_result);
 #ifdef IS_DEBUG
   string result = "NULL";
   if (p_res != NULL) {
@@ -224,6 +225,7 @@ sql_query.replace(sql_query.find("%ROBOTS_TABLE%"), 14, robots_table);
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "MakeChoice result:\n%s\n\n",
               result.c_str());
 #endif
+  sqlite3_free_table(sql_result);
   sqlite3_close(db);
 
   return p_res;

@@ -9,10 +9,8 @@
 #include <set>
 #include <tuple>
 
-#include <iostream>
-
 #ifdef _WIN32
-//#include "stringC11.h"
+#include "stringC11.h"
 #endif
 
 #include "SimpleIni.h"

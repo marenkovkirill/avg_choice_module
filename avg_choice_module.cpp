@@ -4,10 +4,15 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <sqlite3.h>
+
 #include <string>
+#include <set>
+#include <tuple>
+
+#include <iostream>
 
 #ifdef _WIN32
-#include "stringC11.h"
+//#include "stringC11.h"
 #endif
 
 #include "SimpleIni.h"
@@ -84,7 +89,8 @@ int AvgChoiceModule::startProgram(int run_index, int pc_index) { return 0; }
 const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const ChoiceFunctionData **function_data, uint count_functions,
     const ChoiceRobotData **robots_data, uint count_robots) {
-  if (not (count_functions && count_robots)) {
+
+  if (not ((count_functions == 1) && count_robots)) {
      return NULL;
   }
 
@@ -97,94 +103,86 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     return NULL;
   }
 
-  string sql_query =
-      "with funcs as (select f.id\n"
-      "                 from functions f\n"
-      "                 join contexts c\n"
-      "                   on f.context_id = c.id\n"
-      "                where (%FUNCS_CLAUSE%"
-      "                       )\n"
-      "		      ),\n"
-      "     robots as (select ru.id\n"
-      "                  from robot_uids ru\n"
-      "                  join sources s\n"
-      "                    on (ru.source_id = s.id)\n"
-      "	          where (%ROBOTS_CLAUSE%"
-      "                  )\n"
-      "                ),\n"
-      "     fc as (select fc.robot_id,\n"
-      "                   count(distinct funcs.id) as f_cnt,\n"
-      "                   avg(fc.end-fc.start) as avg_time\n"
-      "              from function_calls fc\n"
-      "              join robots on (fc.robot_id = robots.id)\n"
-      "              join funcs on (funcs.id = fc.function_id)\n"
-      "             group by fc.robot_id\n"
-      "            )\n"
-      "select rt.uid, 1 as pos, 0 as f_cnt, 0 as avg_time\n"
-      "  from (%ROBOTS_TABLE%"
-      "	       ) rt\n"
-      "	where not exists (select 1 from robot_uids ru where ru.uid = rt.uid)\n"
-      " union\n"
-      " select uid, pos, f_cnt, avg_time\n"
-      "   from (select ru.uid, 2 as pos, fc.f_cnt, fc.avg_time\n"
-      "           from robot_uids ru\n"
-      "           left join fc\n"
-      "             on (fc.robot_id = ru.id)\n"
-      "         ) b\n"
-      " order by pos, f_cnt, avg_time\n"
-      " limit 1\n";
+  string sql_query = 
+    "select\n"     
+    "  s.iid,\n"
+    "  ru.uid,\n"
+    "avg(fc.end - fc.start) as avg_time\n"
+    "from\n"
+    "  function_calls as fc,\n"
+    "  robot_uids as ru,\n"
+    "  sources as s,\n"
+    "  functions as f,\n"
+    "  contexts as c\n"
+    "where\n"
+    "  fc.function_id = f.id\n"
+    "  and f.context_id = c.id\n"
+    "  and fc.robot_id = ru.id\n"
+    "  and ru.source_id = s.id\n"
+
+    "  /* calls restrict */\n"
+    "  and fc.success = 1\n"
+    "  and fc.end is not NULL\n";
 
 
-  string functions_clause = "";
-  for (uint i = 0; i < count_functions; i++) {
-    if (i >= 1) {
-      functions_clause += "or ";
-    }
-    functions_clause += "(f.name = '" + (string)(function_data[i]->name) +
-                        "'\n"
-                        " and f.position = " +
-                        to_string(function_data[i]->position) +
-                        "\n"
-                        " and c.hash = '" +
-                        (string)(function_data[i]->context_hash) + "')\n";
+  string functions_restrict = "and ";
+  const ChoiceFunctionData *func_data = function_data[0];
+
+  functions_restrict += "f.name = '" + (string)(func_data->name) + 
+                        "'\nand " +
+                    //    "f.position = " + to_string(func_data->position) + 
+                      //  "\nand " +
+                        "c.hash = '" + (string)(func_data->context_hash) + 
+                        "'\n";
+
+  set<tuple<string, string>> modules;
+  set<string> robots_name;
+
+  bool is_empty_name = false;
+
+  for(uint i = 0; i < count_robots && !is_empty_name; i++) {
+    const ChoiceModuleData*  m = robots_data[i]->module_data;
+    const char* uid = robots_data[i]->robot_uid;
+
+    modules.insert(make_tuple((string)m->iid, (string)m->hash));
+    robots_name.insert((string)uid);
+    
+    is_empty_name = (uid == NULL) || ((string)(uid) == (string)"") || 
+                    is_empty_name;
   }
-  sql_query.replace(sql_query.find("%FUNCS_CLAUSE%"), 14, functions_clause);
+  
+  string robots_restrict = "";
 
-  string robots_table = "";
-uint uid_count = 0;
-string robots_clause =
-    "   %ROBOT_UIDS%\n"
-    "or %SOURCE_HASHES%\n";
-string uids = "";
-string hashes = "";
-for (uint i = 0; i < count_robots; i++) {
-  if (robots_data[i]->robot_uid == 0 or robots_data[i]->robot_uid == NULL or
-      (string)(robots_data[i]->robot_uid) == (string) "") {
-    hashes += "'" + (string)(robots_data[i]->module_data->hash) + "',";
-  } else {
-    uid_count += 1;
-    uids += "'" + (string)(robots_data[i]->robot_uid) + "',";
-    if (uid_count > 1) {
-      robots_table += "UNION\n";
+  if (!is_empty_name) {              
+    string robots_uid = "";
+
+    for (auto name : robots_name) {
+      if (robots_uid != "") {
+        robots_uid += ",";
+      }
+
+      robots_uid += "'" + name + "'";
     }
-    robots_table +=
-        "select '" + (string)(robots_data[i]->robot_uid) + "' as uid\n";
+
+    robots_uid = "(" + robots_uid + ")";
+
+    for (auto pair : modules) {
+      if (robots_restrict != "") {
+        robots_restrict += "or ";
+      }
+
+      robots_restrict += string("(\n") + 
+                     //    "s.iid = '" + get<0>(pair) + "'\nand " +
+                         "s.hash = '" + get<1>(pair) + "'\nand " +
+                         "s.type = 2\nand " +
+                         "ru.uid in" + robots_uid + "\n)\n";
+    }    
+  
+    robots_restrict = "and (\n" + robots_restrict + ")\n";
   }
-}
-if (uids == (string) "") {
-  uids = "1=0";
-} else {
-  uids = "ru.uid in (" + uids.substr(0, uids.length() - 1) + ")";
-}
-if (hashes == (string) "") {
-  hashes = "1=0";
-} else {
-  hashes = "s.hash in (" + hashes.substr(0, hashes.length() - 1) + ")";
-}
-robots_clause.replace(robots_clause.find("%ROBOT_UIDS%"), 12, uids);
-robots_clause.replace(robots_clause.find("%SOURCE_HASHES%"), 15, hashes);
-sql_query.replace(sql_query.find("%ROBOTS_CLAUSE%"), 15, robots_clause);
-sql_query.replace(sql_query.find("%ROBOTS_TABLE%"), 14, robots_table);
+
+  sql_query += functions_restrict + robots_restrict + 
+               "group by s.iid,ru.uid order by avg_time ASC";
 
 #ifdef IS_DEBUG
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL statement:\n%s\n\n",
@@ -203,15 +201,14 @@ sql_query.replace(sql_query.find("%ROBOTS_TABLE%"), 14, robots_table);
     sqlite3_close(db);
     return NULL;
   }
-#ifdef IS_DEBUG
-  colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL result:\n%s\n\n",
-              num_col > 0 ? sql_result[4] : "NULL");
-#endif
 
   const ChoiceRobotData *p_res = NULL;
   if (num_col > 0) {
-    for (uint i = 0; i < count_robots; i++) {
-      if ((string)(robots_data[i]->robot_uid) == (string)sql_result[4]) {
+    for (uint i = 0; i < count_robots && p_res == NULL; i++) {
+      const ChoiceRobotData *data = robots_data[i];
+  
+      if ((string)data->module_data->iid == (string)sql_result[num_col] &&
+          (string)data->robot_uid == (string)sql_result[num_col + 1]) {
         p_res = robots_data[i];
       }
     }

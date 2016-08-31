@@ -139,12 +139,18 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   for(uint i = 0; i < count_robots && !is_empty_name; i++) {
     const ChoiceModuleData*  m = robots_data[i]->module_data;
     const char* uid = robots_data[i]->robot_uid;
-    string str_uid(uid);
+    
+    if (uid != NULL) {
+      string str_uid(uid);
 
-    modules.insert(make_tuple((string)m->iid, (string)m->hash));
-    robots_name.insert(str_uid);
+      modules.insert(make_tuple((string)m->iid, (string)m->hash));
+      robots_name.insert(str_uid);
 
-    is_empty_name = (uid == NULL) || (str_uid.empty());
+      is_empty_name = str_uid.empty();
+    } 
+    else {
+      is_empty_name = true;
+    }
   }
   
   string robots_restrict = "";

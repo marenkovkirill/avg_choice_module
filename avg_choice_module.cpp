@@ -10,7 +10,7 @@
 #include <tuple>
 
 #ifdef _WIN32
-#include "stringC11.h"
+//#include "stringC11.h"
 #endif
 
 #include "SimpleIni.h"
@@ -128,8 +128,6 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
 
   functions_restrict += "f.name = '" + (string)(func_data->name) + 
                         "'\nand " +
-                    //    "f.position = " + to_string(func_data->position) + 
-                      //  "\nand " +
                         "c.hash = '" + (string)(func_data->context_hash) + 
                         "'\n";
 
@@ -141,12 +139,12 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   for(uint i = 0; i < count_robots && !is_empty_name; i++) {
     const ChoiceModuleData*  m = robots_data[i]->module_data;
     const char* uid = robots_data[i]->robot_uid;
+    string str_uid(uid);
 
     modules.insert(make_tuple((string)m->iid, (string)m->hash));
-    robots_name.insert((string)uid);
-    
-    is_empty_name = (uid == NULL) || ((string)(uid) == (string)"") || 
-                    is_empty_name;
+    robots_name.insert(str_uid);
+
+    is_empty_name = (uid == NULL) || (str_uid.empty());
   }
   
   string robots_restrict = "";
@@ -170,7 +168,6 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
       }
 
       robots_restrict += string("(\n") + 
-                     //    "s.iid = '" + get<0>(pair) + "'\nand " +
                          "s.hash = '" + get<1>(pair) + "'\nand " +
                          "s.type = 2\nand " +
                          "ru.uid in" + robots_uid + "\n)\n";
@@ -180,7 +177,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   }
 
   sql_query += functions_restrict + robots_restrict + 
-               "group by s.iid,ru.uid order by avg_time ASC";
+               "group by s.iid,ru.uid order by avg_time ASC limit 1";
 
 #ifdef IS_DEBUG
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL statement:\n%s\n\n",

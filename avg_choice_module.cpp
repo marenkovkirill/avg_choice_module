@@ -7,7 +7,8 @@
 
 #include <string>
 #include <set>
-#include <tuple>
+#include <map>
+#include <vector>
 
 #ifdef _WIN32
 //#include "stringC11.h"
@@ -131,54 +132,63 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
                         "c.hash = '" + (string)(func_data->context_hash) + 
                         "'\n";
 
-  set<tuple<string, string>> modules;
-  set<string> robots_name;
-
+  map<string, vector<string>> modulesRobots;
   bool is_empty_name = false;
-
-  for(uint i = 0; i < count_robots && !is_empty_name; i++) {
-    const ChoiceModuleData*  m = robots_data[i]->module_data;
-    const char* uid = robots_data[i]->robot_uid;
+  for (int i = 0; i < count_robots; ++i) {
+    const char* check_uid = robots_data[i]->robot_uid;
     
-    if (uid != NULL) {
-      string str_uid(uid);
+    if (check_uid != NULL) {
+      string uid(check_uid);
+      if (uid.empty()){
+        is_empty_name = true;
+        break;
+      }
+      const char* check_iid = robots_data[i]->module_data->iid;
+      string tmpIid(check_iid);
 
-      modules.insert(make_tuple((string)m->iid, (string)m->hash));
-      robots_name.insert(str_uid);
+      colorPrintf(ConsoleColor(ConsoleColor::yellow), "%d iid: %s\n",
+        i, tmpIid.c_str());
 
-      is_empty_name = str_uid.empty();
-    } 
-    else {
+      if (modulesRobots.count(tmpIid)) {
+        modulesRobots[tmpIid].push_back(uid);
+      } else {
+        vector<string> newVector;
+        newVector.push_back(uid);
+        modulesRobots[tmpIid] = newVector;
+      }
+    } else {
       is_empty_name = true;
+      break;
     }
   }
+
   
-  string robots_restrict = "";
+  string robots_restrict("");
 
   if (!is_empty_name) {              
-    string robots_uid = "";
+    for (auto robots = modulesRobots.begin(); robots != modulesRobots.end(); ++robots) {
 
-    for (auto name : robots_name) {
-      if (robots_uid != "") {
-        robots_uid += ",";
+      string robots_uid("");
+      auto robots_names = robots->second;
+      for (int i = 0; i < robots_names.size(); ++i) {
+        if (!robots_uid.empty()) {
+          robots_uid += ",";
+        }
+        robots_uid += "'" + robots_names[i] + "'";
       }
 
-      robots_uid += "'" + name + "'";
-    }
+      robots_uid = "(" + robots_uid + ")";
 
-    robots_uid = "(" + robots_uid + ")";
-
-    for (auto pair : modules) {
-      if (robots_restrict != "") {
+      if (!robots_restrict.empty()) {
         robots_restrict += "or ";
       }
 
       robots_restrict += string("(\n") + 
-                         "s.hash = '" + get<1>(pair) + "'\nand " +
+                         "s.iid = '" + robots->first + "'\nand " +
                          "s.type = 2\nand " +
                          "ru.uid in" + robots_uid + "\n)\n";
-    }    
-  
+    }
+
     robots_restrict = "and (\n" + robots_restrict + ")\n";
   }
 

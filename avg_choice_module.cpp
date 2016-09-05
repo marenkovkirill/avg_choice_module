@@ -6,8 +6,6 @@
 #include <sqlite3.h>
 
 #include <string>
-#include <set>
-#include <map>
 #include <vector>
 
 #ifdef _WIN32

@@ -25,6 +25,14 @@
 #define IID "RCT.AVG_choise_module_v101"
 typedef unsigned int uint;
 
+struct ResultData {
+  std::string iid;
+  std::string uid;
+  double averageTime;
+  ResultData(std::string iid, std::string uid, double averageTime)
+    : iid(iid), uid(uid), averageTime(averageTime) {};
+};
+
 AvgChoiceModule::AvgChoiceModule() {
   mi = new ModuleInfo;
   mi->uid = IID;
@@ -134,7 +142,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
 
   map<string, vector<string>> modulesRobots;
   bool is_empty_name = false;
-  for (int i = 0; i < count_robots; ++i) {
+  for (uint i = 0; i < count_robots; ++i) {
     const char* check_uid = robots_data[i]->robot_uid;
     
     if (check_uid != NULL) {
@@ -170,7 +178,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
 
       string robots_uid("");
       auto robots_names = robots->second;
-      for (int i = 0; i < robots_names.size(); ++i) {
+      for (uint i = 0; i < robots_names.size(); ++i) {
         if (!robots_uid.empty()) {
           robots_uid += ",";
         }
@@ -193,7 +201,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   }
 
   sql_query += functions_restrict + robots_restrict + 
-               "group by s.iid,ru.uid order by avg_time ASC limit 1";
+               "group by s.iid,ru.uid order by avg_time ASC";
 
 #ifdef IS_DEBUG
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL statement:\n%s\n\n",
@@ -214,13 +222,53 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   }
 
   const ChoiceRobotData *p_res = NULL;
-  if (num_col > 0) {
-    for (uint i = 0; i < count_robots && p_res == NULL; i++) {
+  std::vector<ResultData> resultData;
+
+  for (int i = 0; i < num_row; ++i) {
+    const int iidPos = (i+1)*num_col;
+    const int uidPos = iidPos + 1;
+    const int avgTimePos = uidPos + 1;
+
+    const string iid(sql_result[iidPos]);
+    const string uid(sql_result[uidPos]);
+    const string averageTime(sql_result[avgTimePos]);
+
+    resultData.push_back(ResultData(iid, uid, stod(averageTime)));
+  }
+
+  bool isRobotFinded = false;
+  for (uint i = 0; i < count_robots; i++) {
+    const ChoiceRobotData *data = robots_data[i];
+
+    const string currentIid(data->module_data->iid);
+    const string currentUid(data->robot_uid);
+
+    isRobotFinded = false;
+    for (uint resIndex = 0; resIndex < resultData.size(); ++resIndex) {
+      if (!currentIid.compare(resultData[resIndex].iid) && 
+          !currentUid.compare(resultData[resIndex].uid)){
+        isRobotFinded = true;
+        break;
+      }
+    }
+
+    if (!isRobotFinded){
+      colorPrintf(ConsoleColor(ConsoleColor::green), "ADD Robot\n");
+      p_res = data;
+      break;
+    }
+  }
+
+  if (isRobotFinded){
+    for (uint i = 0; i < count_robots; i++) {
       const ChoiceRobotData *data = robots_data[i];
+      string currentIid(data->module_data->iid);
+      string currentUid(data->robot_uid);
   
-      if ((string)data->module_data->iid == (string)sql_result[num_col] &&
-          (string)data->robot_uid == (string)sql_result[num_col + 1]) {
-        p_res = robots_data[i];
+      if (!currentIid.compare(resultData[0].iid) &&
+          !currentUid.compare(resultData[0].uid)){
+        p_res = data;
+      break;
       }
     }
   }
@@ -229,6 +277,8 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   string result = "NULL";
   if (p_res != NULL) {
     result = (string)(p_res->robot_uid);
+    result += " : ";
+    result += (string)(p_res->module_data->iid);
   }
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "MakeChoice result:\n%s\n\n",
               result.c_str());

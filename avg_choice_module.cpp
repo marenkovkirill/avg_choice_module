@@ -100,7 +100,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     return NULL;
   }
 
-  string sql_query = 
+  string sqlQuery = 
     "select\n"     
     "  s.iid,\n"
     "  ru.uid,\n"
@@ -122,27 +122,27 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     "  and fc.end is not NULL\n";
 
 
-  string functions_restrict = "and ";
+  string functionsRestrict = "and ";
   const ChoiceFunctionData *func_data = function_data[0];
 
-  functions_restrict += "f.name = '" + (string)(func_data->name) + 
+  functionsRestrict += "f.name = '" + (string)(func_data->name) + 
                         "'\nand " +
                         "c.hash = '" + (string)(func_data->context_hash) + 
                         "'\n";
 
   map<string, vector<string>> modulesRobots;
-  bool is_empty_name = false;
+  bool isEmptyName = false;
   for (uint i = 0; i < count_robots; ++i) {
-    const char* check_uid = robots_data[i]->robot_uid;
+    const char* checkUid = robots_data[i]->robot_uid;
     
-    if (check_uid != NULL) {
-      string uid(check_uid);
+    if (checkUid != NULL) {
+      string uid(checkUid);
       if (uid.empty()){
-        is_empty_name = true;
+        isEmptyName = true;
         break;
       }
-      const char* check_iid = robots_data[i]->module_data->iid;
-      string tmpIid(check_iid);
+      const char* checkIid = robots_data[i]->module_data->iid;
+      string tmpIid(checkIid);
 
       colorPrintf(ConsoleColor(ConsoleColor::yellow), "%d iid: %s\n",
         i, tmpIid.c_str());
@@ -155,63 +155,63 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
         modulesRobots[tmpIid] = newVector;
       }
     } else {
-      is_empty_name = true;
+      isEmptyName = true;
       break;
     }
   }
 
   
-  string robots_restrict("");
+  string robotsRestrict("");
 
-  if (!is_empty_name) {              
+  if (!isEmptyName) {              
     for (auto robots = modulesRobots.begin(); robots != modulesRobots.end(); ++robots) {
 
-      string robots_uid("");
-      auto robots_names = robots->second;
-      for (uint i = 0; i < robots_names.size(); ++i) {
-        if (!robots_uid.empty()) {
-          robots_uid += ",";
+      string robotsUid("");
+      auto robotsNames = robots->second;
+      for (uint i = 0; i < robotsNames.size(); ++i) {
+        if (!robotsUid.empty()) {
+          robotsUid += ",";
         }
-        robots_uid += "'" + robots_names[i] + "'";
+        robotsUid += "'" + robotsNames[i] + "'";
       }
 
-      robots_uid = "(" + robots_uid + ")";
+      robotsUid = "(" + robotsUid + ")";
 
-      if (!robots_restrict.empty()) {
-        robots_restrict += "or ";
+      if (!robotsRestrict.empty()) {
+        robotsRestrict += "or ";
       }
 
-      robots_restrict += string("(\n") + 
+      robotsRestrict += string("(\n") + 
                          "s.iid = '" + robots->first + "'\nand " +
                          "s.type = 2\nand " +
-                         "ru.uid in" + robots_uid + "\n)\n";
+                         "ru.uid in" + robotsUid + "\n)\n";
     }
 
-    robots_restrict = "and (\n" + robots_restrict + ")\n";
+    robotsRestrict = "and (\n" + robotsRestrict + ")\n";
   }
 
-  sql_query += functions_restrict + robots_restrict + 
+  sqlQuery += functionsRestrict + robotsRestrict + 
                "group by s.iid,ru.uid order by avg_time ASC";
 
 #ifdef IS_DEBUG
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL statement:\n%s\n\n",
-              sql_query.c_str());
+              sqlQuery.c_str());
 #endif
 
   int num_row = 0;
   int num_col = 0;
-  char *error_message = 0;
-  char **sql_result = 0;
-  if (sqlite3_get_table(db, sql_query.c_str(), &sql_result, &num_row, &num_col,
-                        &error_message) != SQLITE_OK) {
+  char *errorMessage = 0;
+  char **sqlResult = 0;
+  if (sqlite3_get_table(db, sqlQuery.c_str(), &sqlResult, &num_row, &num_col,
+                        &errorMessage) != SQLITE_OK) {
     colorPrintf(ConsoleColor(ConsoleColor::red), "SQL error:\n%s\n\n",
-                error_message);
-    sqlite3_free(error_message);
+                errorMessage);
+    sqlite3_free(errorMessage);
     sqlite3_close(db);
     return NULL;
   }
 
-  const ChoiceRobotData *p_res = NULL;
+  const ChoiceRobotData *resultRobot = NULL;
   std::vector<ResultData> resultData;
 
   for (int i = 0; i < num_row; ++i) {
@@ -219,9 +219,9 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const int uidPos = iidPos + 1;
     const int avgTimePos = uidPos + 1;
 
-    const string iid(sql_result[iidPos]);
-    const string uid(sql_result[uidPos]);
-    const string averageTime(sql_result[avgTimePos]);
+    const string iid(sqlResult[iidPos]);
+    const string uid(sqlResult[uidPos]);
+    const string averageTime(sqlResult[avgTimePos]);
 
     resultData.push_back(ResultData(iid, uid, stod(averageTime)));
   }
@@ -244,7 +244,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
 
     if (!isRobotFinded){
       colorPrintf(ConsoleColor(ConsoleColor::green), "ADD Robot\n");
-      p_res = data;
+      resultRobot = data;
       break;
     }
   }
@@ -257,7 +257,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   
       if (!currentIid.compare(resultData[0].iid) &&
           !currentUid.compare(resultData[0].uid)){
-        p_res = data;
+        resultRobot = data;
       break;
       }
     }
@@ -265,18 +265,18 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
 
 #ifdef IS_DEBUG
   string result = "NULL";
-  if (p_res != NULL) {
-    result = (string)(p_res->robot_uid);
+  if (resultRobot != NULL) {
+    result = (string)(resultRobot->robot_uid);
     result += " : ";
-    result += (string)(p_res->module_data->iid);
+    result += (string)(resultRobot->module_data->iid);
   }
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "MakeChoice result:\n%s\n\n",
               result.c_str());
 #endif
-  sqlite3_free_table(sql_result);
+  sqlite3_free_table(sqlResult);
   sqlite3_close(db);
 
-  return p_res;
+  return resultRobot;
 }
 
 int AvgChoiceModule::endProgram(int run_index) { return 0; }

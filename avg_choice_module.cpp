@@ -6,8 +6,7 @@
 #include <sqlite3.h>
 
 #include <string>
-#include <set>
-#include <tuple>
+#include <vector>
 
 #ifdef _WIN32
 //#include "stringC11.h"
@@ -101,7 +100,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     return NULL;
   }
 
-  string sql_query = 
+  string sqlQuery = 
     "select\n"     
     "  s.iid,\n"
     "  ru.uid,\n"
@@ -123,110 +122,161 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     "  and fc.end is not NULL\n";
 
 
-  string functions_restrict = "and ";
+  string functionsRestrict = "and ";
   const ChoiceFunctionData *func_data = function_data[0];
 
-  functions_restrict += "f.name = '" + (string)(func_data->name) + 
+  functionsRestrict += "f.name = '" + (string)(func_data->name) + 
                         "'\nand " +
                         "c.hash = '" + (string)(func_data->context_hash) + 
                         "'\n";
 
-  set<tuple<string, string>> modules;
-  set<string> robots_name;
-
-  bool is_empty_name = false;
-
-  for(uint i = 0; i < count_robots && !is_empty_name; i++) {
-    const ChoiceModuleData*  m = robots_data[i]->module_data;
-    const char* uid = robots_data[i]->robot_uid;
+  map<string, vector<string>> modulesRobots;
+  bool isEmptyName = false;
+  for (uint i = 0; i < count_robots; ++i) {
+    const char* checkUid = robots_data[i]->robot_uid;
     
-    if (uid != NULL) {
-      string str_uid(uid);
+    if (checkUid != NULL) {
+      string uid(checkUid);
+      if (uid.empty()){
+        isEmptyName = true;
+        break;
+      }
+      const char* checkIid = robots_data[i]->module_data->iid;
+      string tmpIid(checkIid);
 
-      modules.insert(make_tuple((string)m->iid, (string)m->hash));
-      robots_name.insert(str_uid);
+      colorPrintf(ConsoleColor(ConsoleColor::yellow), "%d iid: %s\n",
+        i, tmpIid.c_str());
 
-      is_empty_name = str_uid.empty();
-    } 
-    else {
-      is_empty_name = true;
+      if (modulesRobots.count(tmpIid)) {
+        modulesRobots[tmpIid].push_back(uid);
+      } else {
+        vector<string> newVector;
+        newVector.push_back(uid);
+        modulesRobots[tmpIid] = newVector;
+      }
+    } else {
+      isEmptyName = true;
+      break;
     }
   }
+
   
-  string robots_restrict = "";
+  string robotsRestrict("");
 
-  if (!is_empty_name) {              
-    string robots_uid = "";
+  if (!isEmptyName) {              
+    for (auto robots = modulesRobots.begin(); robots != modulesRobots.end(); ++robots) {
 
-    for (auto name : robots_name) {
-      if (robots_uid != "") {
-        robots_uid += ",";
+      string robotsUid("");
+      auto robotsNames = robots->second;
+      for (uint i = 0; i < robotsNames.size(); ++i) {
+        if (!robotsUid.empty()) {
+          robotsUid += ",";
+        }
+        robotsUid += "'" + robotsNames[i] + "'";
       }
 
-      robots_uid += "'" + name + "'";
-    }
+      robotsUid = "(" + robotsUid + ")";
 
-    robots_uid = "(" + robots_uid + ")";
-
-    for (auto pair : modules) {
-      if (robots_restrict != "") {
-        robots_restrict += "or ";
+      if (!robotsRestrict.empty()) {
+        robotsRestrict += "or ";
       }
 
-      robots_restrict += string("(\n") + 
-                         "s.hash = '" + get<1>(pair) + "'\nand " +
+      robotsRestrict += string("(\n") + 
+                         "s.iid = '" + robots->first + "'\nand " +
                          "s.type = 2\nand " +
-                         "ru.uid in" + robots_uid + "\n)\n";
-    }    
-  
-    robots_restrict = "and (\n" + robots_restrict + ")\n";
+                         "ru.uid in" + robotsUid + "\n)\n";
+    }
+
+    robotsRestrict = "and (\n" + robotsRestrict + ")\n";
   }
 
-  sql_query += functions_restrict + robots_restrict + 
-               "group by s.iid,ru.uid order by avg_time ASC limit 1";
+  sqlQuery += functionsRestrict + robotsRestrict + 
+               "group by s.iid,ru.uid order by avg_time ASC";
 
 #ifdef IS_DEBUG
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "SQL statement:\n%s\n\n",
-              sql_query.c_str());
+              sqlQuery.c_str());
 #endif
 
   int num_row = 0;
   int num_col = 0;
-  char *error_message = 0;
-  char **sql_result = 0;
-  if (sqlite3_get_table(db, sql_query.c_str(), &sql_result, &num_row, &num_col,
-                        &error_message) != SQLITE_OK) {
+  char *errorMessage = 0;
+  char **sqlResult = 0;
+  if (sqlite3_get_table(db, sqlQuery.c_str(), &sqlResult, &num_row, &num_col,
+                        &errorMessage) != SQLITE_OK) {
     colorPrintf(ConsoleColor(ConsoleColor::red), "SQL error:\n%s\n\n",
-                error_message);
-    sqlite3_free(error_message);
+                errorMessage);
+    sqlite3_free(errorMessage);
     sqlite3_close(db);
     return NULL;
   }
 
-  const ChoiceRobotData *p_res = NULL;
-  if (num_col > 0) {
-    for (uint i = 0; i < count_robots && p_res == NULL; i++) {
+  const ChoiceRobotData *resultRobot = NULL;
+  std::vector<ResultData> resultData;
+
+  for (int i = 0; i < num_row; ++i) {
+    const int iidPos = (i+1)*num_col;
+    const int uidPos = iidPos + 1;
+    const int avgTimePos = uidPos + 1;
+
+    const string iid(sqlResult[iidPos]);
+    const string uid(sqlResult[uidPos]);
+    const string averageTime(sqlResult[avgTimePos]);
+
+    resultData.push_back(ResultData(iid, uid, stod(averageTime)));
+  }
+
+  bool isRobotFinded = false;
+  for (uint i = 0; i < count_robots; i++) {
+    const ChoiceRobotData *data = robots_data[i];
+
+    const string currentIid(data->module_data->iid);
+    const string currentUid(data->robot_uid);
+
+    isRobotFinded = false;
+    for (uint resIndex = 0; resIndex < resultData.size(); ++resIndex) {
+      if (!currentIid.compare(resultData[resIndex].iid) && 
+          !currentUid.compare(resultData[resIndex].uid)){
+        isRobotFinded = true;
+        break;
+      }
+    }
+
+    if (!isRobotFinded){
+      colorPrintf(ConsoleColor(ConsoleColor::green), "ADD Robot\n");
+      resultRobot = data;
+      break;
+    }
+  }
+
+  if (isRobotFinded){
+    for (uint i = 0; i < count_robots; i++) {
       const ChoiceRobotData *data = robots_data[i];
+      string currentIid(data->module_data->iid);
+      string currentUid(data->robot_uid);
   
-      if ((string)data->module_data->iid == (string)sql_result[num_col] &&
-          (string)data->robot_uid == (string)sql_result[num_col + 1]) {
-        p_res = robots_data[i];
+      if (!currentIid.compare(resultData[0].iid) &&
+          !currentUid.compare(resultData[0].uid)){
+        resultRobot = data;
+      break;
       }
     }
   }
 
 #ifdef IS_DEBUG
   string result = "NULL";
-  if (p_res != NULL) {
-    result = (string)(p_res->robot_uid);
+  if (resultRobot != NULL) {
+    result = (string)(resultRobot->robot_uid);
+    result += " : ";
+    result += (string)(resultRobot->module_data->iid);
   }
   colorPrintf(ConsoleColor(ConsoleColor::yellow), "MakeChoice result:\n%s\n\n",
               result.c_str());
 #endif
-  sqlite3_free_table(sql_result);
+  sqlite3_free_table(sqlResult);
   sqlite3_close(db);
 
-  return p_res;
+  return resultRobot;
 }
 
 int AvgChoiceModule::endProgram(int run_index) { return 0; }

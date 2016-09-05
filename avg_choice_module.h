@@ -4,6 +4,14 @@
 
 using namespace std;
 
+struct ResultData {
+  std::string iid;
+  std::string uid;
+  double averageTime;
+  ResultData(std::string iid, std::string uid, double averageTime)
+    : iid(iid), uid(uid), averageTime(averageTime) {};
+};
+
 class AvgChoiceModule : public ChoiceModule {
   colorPrintfModuleVA_t *colorPrintf_p;
   ModuleInfo *mi;

@@ -23,14 +23,6 @@
 #define IID "RCT.AVG_choise_module_v101"
 typedef unsigned int uint;
 
-struct ResultData {
-  std::string iid;
-  std::string uid;
-  double averageTime;
-  ResultData(std::string iid, std::string uid, double averageTime)
-    : iid(iid), uid(uid), averageTime(averageTime) {};
-};
-
 AvgChoiceModule::AvgChoiceModule() {
   mi = new ModuleInfo;
   mi->uid = IID;

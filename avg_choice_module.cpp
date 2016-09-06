@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
 #ifdef _WIN32
 //#include "stringC11.h"
@@ -123,70 +124,75 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
 
 
   string functionsRestrict = "and ";
-  const ChoiceFunctionData *func_data = function_data[0];
+  const ChoiceFunctionData *funcData = function_data[0];
 
-  functionsRestrict += "f.name = '" + (string)(func_data->name) + 
+  functionsRestrict += "f.name = '" + (string)(funcData->name) + 
                         "'\nand " +
-                        "c.hash = '" + (string)(func_data->context_hash) + 
+                        "c.hash = '" + (string)(funcData->context_hash) + 
                         "'\n";
 
-  map<string, vector<string>> modulesRobots;
-  bool isEmptyName = false;
+  map<string, vector<string>> robotsModules;
+  set<string> excludedModules;
   for (uint i = 0; i < count_robots; ++i) {
     const char* checkUid = robots_data[i]->robot_uid;
+    const char* checkIid = robots_data[i]->module_data->iid;
+    string tmpIid(checkIid);
     
     if (checkUid != NULL) {
       string uid(checkUid);
       if (uid.empty()){
-        isEmptyName = true;
-        break;
+        if (!excludedModules.count(tmpIid)){
+          excludedModules.insert(checkIid);
+        }
+        continue;
       }
-      const char* checkIid = robots_data[i]->module_data->iid;
-      string tmpIid(checkIid);
 
-      colorPrintf(ConsoleColor(ConsoleColor::yellow), "%d iid: %s\n",
-        i, tmpIid.c_str());
-
-      if (modulesRobots.count(tmpIid)) {
-        modulesRobots[tmpIid].push_back(uid);
+      if (robotsModules.count(tmpIid)) {
+        robotsModules[tmpIid].push_back(uid);
       } else {
-        vector<string> newVector;
-        newVector.push_back(uid);
-        modulesRobots[tmpIid] = newVector;
+        robotsModules.emplace(tmpIid, vector<string>());
+        robotsModules[tmpIid].push_back(uid);
       }
     } else {
-      isEmptyName = true;
-      break;
+      if (!excludedModules.count(tmpIid)){
+        excludedModules.insert(checkIid);
+      }
+      continue;
     }
   }
 
-  
   string robotsRestrict("");
-
-  if (!isEmptyName) {              
-    for (auto robots = modulesRobots.begin(); robots != modulesRobots.end(); ++robots) {
-
-      string robotsUid("");
-      auto robotsNames = robots->second;
+            
+  for (auto robotModule = robotsModules.begin(); 
+       robotModule != robotsModules.end(); 
+       ++robotModule) 
+  {
+    string robotsUids("");
+    if (!excludedModules.count(robotModule->first)) {
+      auto robotsNames = robotModule->second;
       for (uint i = 0; i < robotsNames.size(); ++i) {
-        if (!robotsUid.empty()) {
-          robotsUid += ",";
+        if (!robotsUids.empty()) {
+          robotsUids += ",";
         }
-        robotsUid += "'" + robotsNames[i] + "'";
+        robotsUids += "'" + robotsNames[i] + "'";
       }
 
-      robotsUid = "(" + robotsUid + ")";
-
-      if (!robotsRestrict.empty()) {
-        robotsRestrict += "or ";
-      }
-
-      robotsRestrict += string("(\n") + 
-                         "s.iid = '" + robots->first + "'\nand " +
-                         "s.type = 2\nand " +
-                         "ru.uid in" + robotsUid + "\n)\n";
+      robotsUids = "(" + robotsUids + ")";
     }
 
+    if (!robotsRestrict.empty()) {
+      robotsRestrict += "or ";
+    }
+
+    robotsRestrict += string("(\n") + 
+                       "s.iid = '" + robotModule->first + "'\nand " +
+                       "s.type = 2\nand ";
+    if (!robotsUids.empty()) {
+      robotsRestrict += "ru.uid in" + robotsUids + "\n)\n";
+    }
+  }
+
+  if (!robotsRestrict.empty()) {
     robotsRestrict = "and (\n" + robotsRestrict + ")\n";
   }
 
@@ -198,11 +204,11 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
               sqlQuery.c_str());
 #endif
 
-  int num_row = 0;
-  int num_col = 0;
+  int rowNum = 0;
+  int colNum = 0;
   char *errorMessage = 0;
   char **sqlResult = 0;
-  if (sqlite3_get_table(db, sqlQuery.c_str(), &sqlResult, &num_row, &num_col,
+  if (sqlite3_get_table(db, sqlQuery.c_str(), &sqlResult, &rowNum, &colNum,
                         &errorMessage) != SQLITE_OK) {
     colorPrintf(ConsoleColor(ConsoleColor::red), "SQL error:\n%s\n\n",
                 errorMessage);
@@ -212,10 +218,10 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   }
 
   const ChoiceRobotData *resultRobot = NULL;
-  std::vector<ResultData> resultData;
+  std::vector<ResultData> robotsCandidates;
 
-  for (int i = 0; i < num_row; ++i) {
-    const int iidPos = (i+1)*num_col;
+  for (int i = 0; i < rowNum; ++i) {
+    const int iidPos = (i+1)*colNum;
     const int uidPos = iidPos + 1;
     const int avgTimePos = uidPos + 1;
 
@@ -223,41 +229,44 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const string uid(sqlResult[uidPos]);
     const string averageTime(sqlResult[avgTimePos]);
 
-    resultData.push_back(ResultData(iid, uid, stod(averageTime)));
+    robotsCandidates.push_back(ResultData(iid, uid, stod(averageTime)));
   }
 
   bool isRobotFinded = false;
   for (uint i = 0; i < count_robots; i++) {
-    const ChoiceRobotData *data = robots_data[i];
+    const ChoiceRobotData *candidateRobot = robots_data[i];
 
-    const string currentIid(data->module_data->iid);
-    const string currentUid(data->robot_uid);
+    const string currentIid(candidateRobot->module_data->iid);
+    const string currentUid(candidateRobot->robot_uid);
 
     isRobotFinded = false;
-    for (uint resIndex = 0; resIndex < resultData.size(); ++resIndex) {
-      if (!currentIid.compare(resultData[resIndex].iid) && 
-          !currentUid.compare(resultData[resIndex].uid)){
+    for (uint resIndex = 0; resIndex < robotsCandidates.size(); ++resIndex) {
+      if (!currentIid.compare(robotsCandidates[resIndex].iid) && 
+          !currentUid.compare(robotsCandidates[resIndex].uid)){
         isRobotFinded = true;
         break;
       }
     }
 
     if (!isRobotFinded){
-      colorPrintf(ConsoleColor(ConsoleColor::green), "ADD Robot\n");
-      resultRobot = data;
+#ifdef IS_DEBUG
+      colorPrintf(ConsoleColor(ConsoleColor::green), 
+        "Select robot that don't have statistics\n");
+#endif
+      resultRobot = candidateRobot;
       break;
     }
   }
 
   if (isRobotFinded){
     for (uint i = 0; i < count_robots; i++) {
-      const ChoiceRobotData *data = robots_data[i];
-      string currentIid(data->module_data->iid);
-      string currentUid(data->robot_uid);
+      const ChoiceRobotData *candidateRobot = robots_data[i];
+      const string currentIid(candidateRobot->module_data->iid);
+      const string currentUid(candidateRobot->robot_uid);
   
-      if (!currentIid.compare(resultData[0].iid) &&
-          !currentUid.compare(resultData[0].uid)){
-        resultRobot = data;
+      if (!currentIid.compare(robotsCandidates[0].iid) &&
+          !currentUid.compare(robotsCandidates[0].uid)){
+        resultRobot = candidateRobot;
       break;
       }
     }

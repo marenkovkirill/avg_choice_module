@@ -4,6 +4,14 @@
 
 using namespace std;
 
+struct ResultData {
+  std::string iid;
+  std::string uid;
+  double averageTime;
+  ResultData(std::string iid, std::string uid, double averageTime)
+    : iid(iid), uid(uid), averageTime(averageTime) {};
+};
+
 class AvgChoiceModule : public ChoiceModule {
   colorPrintfModuleVA_t *colorPrintf_p;
   ModuleInfo *mi;
@@ -23,7 +31,7 @@ class AvgChoiceModule : public ChoiceModule {
   void final();
 
   // db
-  sqlite3 *db;
+  std::string db_path;
 
   // intepreter - program & lib
   int readPC(int pc_index, void *buffer, unsigned int buffer_length);

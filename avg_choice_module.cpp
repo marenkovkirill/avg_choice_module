@@ -137,27 +137,25 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const char* checkUid = robots_data[i]->robot_uid;
     const char* checkIid = robots_data[i]->module_data->iid;
     string tmpIid(checkIid);
-    
-    if (checkUid != NULL) {
-      string uid(checkUid);
-      if (uid.empty()){
-        if (!excludedModules.count(tmpIid)){
-          excludedModules.insert(checkIid);
-        }
-        continue;
-      }
 
-      if (robotsModules.count(tmpIid)) {
-        robotsModules[tmpIid].push_back(uid);
-      } else {
-        robotsModules.emplace(tmpIid, vector<string>());
-        robotsModules[tmpIid].push_back(uid);
-      }
-    } else {
+    if (!robotsModules.count(tmpIid)) {
+      robotsModules.emplace(tmpIid, vector<string>());
+    }
+    
+    if (checkUid == NULL) {
       if (!excludedModules.count(tmpIid)){
-        excludedModules.insert(checkIid);
+        excludedModules.insert(tmpIid);
       }
       continue;
+    }
+
+    string uid(checkUid);
+    if (uid.empty()){
+      if (!excludedModules.count(tmpIid)){
+        excludedModules.insert(tmpIid);
+      }
+    } else{
+      robotsModules[tmpIid].push_back(uid);
     }
   }
 
@@ -185,11 +183,11 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     }
 
     robotsRestrict += string("(\n") + 
-                       "s.iid = '" + robotModule->first + "'\nand " +
-                       "s.type = 2\nand ";
+                       "s.iid = '" + robotModule->first + "'\nand ";
     if (!robotsUids.empty()) {
-      robotsRestrict += "ru.uid in" + robotsUids + "\n)\n";
+      robotsRestrict += "ru.uid in" + robotsUids + "\nand";
     }
+    robotsRestrict += "s.type = 2\n)\n";
   }
 
   if (!robotsRestrict.empty()) {

@@ -185,7 +185,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     robotsRestrict += string("(\n") + 
                        "s.iid = '" + robotModule->first + "'\nand ";
     if (!robotsUids.empty()) {
-      robotsRestrict += "ru.uid in" + robotsUids + "\nand";
+      robotsRestrict += "ru.uid in" + robotsUids + "\nand ";
     }
     robotsRestrict += "s.type = 2\n)\n";
   }
@@ -227,7 +227,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const string uid(sqlResult[uidPos]);
     const string averageTime(sqlResult[avgTimePos]);
 
-    robotsCandidates.push_back(ResultData(iid, uid, stod(averageTime)));
+    robotsCandidates.push_back(ResultData(iid, uid, atof(averageTime.c_str())));
   }
 
   bool isRobotFinded = false;

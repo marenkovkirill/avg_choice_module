@@ -10,7 +10,7 @@
 #include <set>
 
 #ifdef _WIN32
-//#include "stringC11.h"
+#include "stringC11.h"
 #endif
 
 #include "SimpleIni.h"
@@ -127,8 +127,10 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   const ChoiceFunctionData *funcData = function_data[0];
 
   functionsRestrict += "f.name = '" + (string)(funcData->name) + 
-                        "'\nand " +
+                        "'\nand " +                        
                         "c.hash = '" + (string)(funcData->context_hash) + 
+                        "'\nand " +
+                        "f.position = " + to_string(funcData->position) +
                         "'\n";
 
   map<string, vector<string>> robotsModules;

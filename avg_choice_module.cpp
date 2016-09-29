@@ -105,7 +105,8 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     "select\n"     
     "  s.iid,\n"
     "  ru.uid,\n"
-    "avg(fc.end - fc.start) as avg_time\n"
+    "avg(fc.end - fc.start) as avg_time,\n"
+    "fc.success\n"
     "from\n"
     "  function_calls as fc,\n"
     "  robot_uids as ru,\n"
@@ -119,7 +120,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     "  and ru.source_id = s.id\n"
 
     "  /* calls restrict */\n"
-    "  and fc.success = 1\n"
+    //"  and fc.success = 1\n"
     "  and fc.end is not NULL\n";
 
 
@@ -224,12 +225,14 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const int iidPos = (i+1)*colNum;
     const int uidPos = iidPos + 1;
     const int avgTimePos = uidPos + 1;
+    const int successPos = avgTimePos + 1;
 
     const string iid(sqlResult[iidPos]);
     const string uid(sqlResult[uidPos]);
     const string averageTime(sqlResult[avgTimePos]);
+    const bool success(atof(sqlResult[successPos]));
 
-    robotsCandidates.push_back(ResultData(iid, uid, atof(averageTime.c_str())));
+    robotsCandidates.push_back(ResultData(iid, uid, atof(averageTime.c_str()), success));
   }
 
   bool isRobotFinded = false;
@@ -259,15 +262,27 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   }
 
   if (isRobotFinded){
-    for (uint i = 0; i < count_robots; i++) {
-      const ChoiceRobotData *candidateRobot = robots_data[i];
-      const string currentIid(candidateRobot->module_data->iid);
-      const string currentUid(candidateRobot->robot_uid);
-  
-      if (!currentIid.compare(robotsCandidates[0].iid) &&
-          !currentUid.compare(robotsCandidates[0].uid)){
-        resultRobot = candidateRobot;
-      break;
+    // find first success function
+    const int errorValue = -1;
+    int successCandidate = errorValue;
+    for (int i = 0; i < robotsCandidates.size(); ++i) {
+      if (robotsCandidates[i].success) {
+        successCandidate = i;
+        break;
+      }
+    }
+
+    if (successCandidate != errorValue){
+      for (uint i = 0; i < count_robots; i++) {
+        const ChoiceRobotData *candidateRobot = robots_data[i];
+        const string currentIid(candidateRobot->module_data->iid);
+        const string currentUid(candidateRobot->robot_uid);
+    
+        if (!currentIid.compare(robotsCandidates[successCandidate].iid) &&
+            !currentUid.compare(robotsCandidates[successCandidate].uid)){
+          resultRobot = candidateRobot;
+        break;
+        }
       }
     }
   }

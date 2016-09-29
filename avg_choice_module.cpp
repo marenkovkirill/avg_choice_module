@@ -131,7 +131,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
                         "'\nand " +                        
                         "c.hash = '" + (string)(funcData->context_hash) + 
                         "'\nand " +
-                        "f.position = " + to_string(funcData->position) +
+                        "f.position = '" + to_string(funcData->position) +
                         "'\n";
 
   map<string, vector<string>> robotsModules;

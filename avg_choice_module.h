@@ -8,8 +8,9 @@ struct ResultData {
   std::string iid;
   std::string uid;
   double averageTime;
-  ResultData(std::string iid, std::string uid, double averageTime)
-    : iid(iid), uid(uid), averageTime(averageTime) {};
+  bool success;
+  ResultData(std::string iid, std::string uid, double averageTime, bool success)
+    : iid(iid), uid(uid), averageTime(averageTime), success(success) {};
 };
 
 class AvgChoiceModule : public ChoiceModule {

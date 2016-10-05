@@ -127,9 +127,9 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   string functionsRestrict = "and ";
   const ChoiceFunctionData *funcData = function_data[0];
 
-  functionsRestrict += "f.name = '" + (string)(funcData->name) + 
-                        "'\nand " +                        
-                        "c.hash = '" + (string)(funcData->context_hash) + 
+  functionsRestrict += "f.name = '" + (string)(funcData->name) +
+                        "'\nand " +
+                        "c.hash = '" + (string)(funcData->context_hash) +
                         "'\nand " +
                         "f.position = '" + to_string(funcData->position) +
                         "'\n";
@@ -171,7 +171,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     string robotsUids("");
     if (!excludedModules.count(robotModule->first)) {
       auto robotsNames = robotModule->second;
-      for (uint i = 0; i < robotsNames.size(); ++i) {
+      for (size_t i = 0; i < robotsNames.size(); ++i) {
         if (!robotsUids.empty()) {
           robotsUids += ",";
         }
@@ -243,7 +243,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const string currentUid(candidateRobot->robot_uid);
 
     isRobotFinded = false;
-    for (uint resIndex = 0; resIndex < robotsCandidates.size(); ++resIndex) {
+    for (size_t resIndex = 0; resIndex < robotsCandidates.size(); ++resIndex) {
       if (!currentIid.compare(robotsCandidates[resIndex].iid) && 
           !currentUid.compare(robotsCandidates[resIndex].uid)){
         isRobotFinded = true;
@@ -265,7 +265,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     // find first success function
     const int errorValue = -1;
     int successCandidate = errorValue;
-    for (int i = 0; i < robotsCandidates.size(); ++i) {
+    for (size_t i = 0; i < robotsCandidates.size(); ++i) {
       if (robotsCandidates[i].success) {
         successCandidate = i;
         break;

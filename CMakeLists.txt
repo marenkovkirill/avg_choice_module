@@ -2,9 +2,7 @@ cmake_minimum_required(VERSION 3.4 FATAL_ERROR)
 set(PROJECT avg_module)
 project(${PROJECT} LANGUAGES C CXX)
 
-if(NOT API_VERSION)
-  message(SEND_ERROR "Please set API_VERSION")
-endif()
+set(API_VERSION 101)
 
 if(NOT BUILD_NUMBER)
   message(SEND_ERROR "Please set BUILD_NUMBER")
@@ -115,4 +113,4 @@ endif()
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 target_include_directories(${PROJECT} INTERFACE $<INSTALL_INTERFACE:include>)
 
-install(TARGETS ${PROJECT} EXPORT ${PROJECT} RUNTIME DESTINATION lib_${API_VERSION} COMPONENT Runtime)
+install(TARGETS ${PROJECT} EXPORT ${PROJECT} RUNTIME DESTINATION lib COMPONENT Runtime)

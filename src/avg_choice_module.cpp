@@ -51,14 +51,14 @@ int AvgChoiceModule::init() {
   ini.SetMultiKey(true);
 
   if (ini.LoadFile(config_path.c_str()) < 0) {
-    colorPrintf(ConsoleColor(ConsoleColor::red), "Can't load '%s' file!",
+    colorPrintf(ConsoleColor(ConsoleColor::red), "Can't load '%s' file!\n",
                 config_path.c_str());
     return 1;
   }
 
-  db_path = ini.GetValue("statisctic", "db_path", NULL);
+  db_path = ini.GetValue("statisctic", "db_path", "");
   if (db_path.empty()) {
-    colorPrintf(ConsoleColor(ConsoleColor::red), "Can't read db_path value");
+    colorPrintf(ConsoleColor(ConsoleColor::red), "Can't read db_path value\n");
     return 1;
   }
 
@@ -68,7 +68,7 @@ int AvgChoiceModule::init() {
     colorPrintf(ConsoleColor(ConsoleColor::red), "Can't open database: %s\n",
                 sqlite3_errmsg(db));
     sqlite3_close(db);
-    return (1);
+    return 1;
   }
   sqlite3_close(db);
 

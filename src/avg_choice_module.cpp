@@ -51,14 +51,14 @@ int AvgChoiceModule::init() {
   ini.SetMultiKey(true);
 
   if (ini.LoadFile(config_path.c_str()) < 0) {
-    colorPrintf(ConsoleColor(ConsoleColor::red), "Can't load '%s' file!",
+    colorPrintf(ConsoleColor(ConsoleColor::red), "Can't load '%s' file!\n",
                 config_path.c_str());
     return 1;
   }
 
-  db_path = ini.GetValue("statisctic", "db_path", NULL);
+  db_path = ini.GetValue("statisctic", "db_path", "");
   if (db_path.empty()) {
-    colorPrintf(ConsoleColor(ConsoleColor::red), "Can't read db_path value");
+    colorPrintf(ConsoleColor(ConsoleColor::red), "Can't read db_path value\n");
     return 1;
   }
 
@@ -68,7 +68,7 @@ int AvgChoiceModule::init() {
     colorPrintf(ConsoleColor(ConsoleColor::red), "Can't open database: %s\n",
                 sqlite3_errmsg(db));
     sqlite3_close(db);
-    return (1);
+    return 1;
   }
   sqlite3_close(db);
 
@@ -127,9 +127,9 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   string functionsRestrict = "and ";
   const ChoiceFunctionData *funcData = function_data[0];
 
-  functionsRestrict += "f.name = '" + (string)(funcData->name) + 
-                        "'\nand " +                        
-                        "c.hash = '" + (string)(funcData->context_hash) + 
+  functionsRestrict += "f.name = '" + (string)(funcData->name) +
+                        "'\nand " +
+                        "c.hash = '" + (string)(funcData->context_hash) +
                         "'\nand " +
                         "f.position = '" + to_string(funcData->position) +
                         "'\n";
@@ -171,7 +171,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     string robotsUids("");
     if (!excludedModules.count(robotModule->first)) {
       auto robotsNames = robotModule->second;
-      for (uint i = 0; i < robotsNames.size(); ++i) {
+      for (size_t i = 0; i < robotsNames.size(); ++i) {
         if (!robotsUids.empty()) {
           robotsUids += ",";
         }
@@ -243,7 +243,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const string currentUid(candidateRobot->robot_uid);
 
     isNewDataNeeded = true;
-    for (uint resIndex = 0; resIndex < robotsCandidatesFromSQLQuery.size(); ++resIndex) {
+    for (size_t resIndex = 0; resIndex < robotsCandidatesFromSQLQuery.size(); ++resIndex) {
       if (!currentIid.compare(robotsCandidatesFromSQLQuery[resIndex].iid) && 
           !currentUid.compare(robotsCandidatesFromSQLQuery[resIndex].uid)){
         isNewDataNeeded = false;
@@ -263,7 +263,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
 
   if (!isNewDataNeeded){
     // find first success function
-    for (unsigned int successCandidate = 0; 
+    for (size_t successCandidate = 0; 
          successCandidate < robotsCandidatesFromSQLQuery.size(); 
          ++successCandidate) 
     {

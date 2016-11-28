@@ -219,7 +219,7 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
   }
 
   const ChoiceRobotData *resultRobot = NULL;
-  std::vector<ResultData> robotsCandidates;
+  std::vector<ResultData> robotsCandidatesFromSQLQuery;
 
   for (int i = 0; i < rowNum; ++i) {
     const int iidPos = (i+1)*colNum;
@@ -232,26 +232,26 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     const string averageTime(sqlResult[avgTimePos]);
     const bool success(atof(sqlResult[successPos]));
 
-    robotsCandidates.push_back(ResultData(iid, uid, atof(averageTime.c_str()), success));
+    robotsCandidatesFromSQLQuery.push_back(ResultData(iid, uid, atof(averageTime.c_str()), success));
   }
 
-  bool isRobotFinded = false;
+  bool isNewDataNeeded = true;
   for (uint i = 0; i < count_robots; i++) {
     const ChoiceRobotData *candidateRobot = robots_data[i];
 
     const string currentIid(candidateRobot->module_data->iid);
     const string currentUid(candidateRobot->robot_uid);
 
-    isRobotFinded = false;
-    for (size_t resIndex = 0; resIndex < robotsCandidates.size(); ++resIndex) {
-      if (!currentIid.compare(robotsCandidates[resIndex].iid) && 
-          !currentUid.compare(robotsCandidates[resIndex].uid)){
-        isRobotFinded = true;
+    isNewDataNeeded = true;
+    for (size_t resIndex = 0; resIndex < robotsCandidatesFromSQLQuery.size(); ++resIndex) {
+      if (!currentIid.compare(robotsCandidatesFromSQLQuery[resIndex].iid) && 
+          !currentUid.compare(robotsCandidatesFromSQLQuery[resIndex].uid)){
+        isNewDataNeeded = false;
         break;
       }
     }
 
-    if (!isRobotFinded){
+    if (isNewDataNeeded){
 #ifdef IS_DEBUG
       colorPrintf(ConsoleColor(ConsoleColor::green), 
         "Select robot that don't have statistics\n");
@@ -261,27 +261,30 @@ const ChoiceRobotData *AvgChoiceModule::makeChoice(int run_index,
     }
   }
 
-  if (isRobotFinded){
+  if (!isNewDataNeeded){
     // find first success function
-    const int errorValue = -1;
-    int successCandidate = errorValue;
-    for (size_t i = 0; i < robotsCandidates.size(); ++i) {
-      if (robotsCandidates[i].success) {
-        successCandidate = i;
-        break;
-      }
-    }
-
-    if (successCandidate != errorValue){
-      for (uint i = 0; i < count_robots; i++) {
-        const ChoiceRobotData *candidateRobot = robots_data[i];
-        const string currentIid(candidateRobot->module_data->iid);
-        const string currentUid(candidateRobot->robot_uid);
-    
-        if (!currentIid.compare(robotsCandidates[successCandidate].iid) &&
-            !currentUid.compare(robotsCandidates[successCandidate].uid)){
-          resultRobot = candidateRobot;
-        break;
+    for (size_t successCandidate = 0; 
+         successCandidate < robotsCandidatesFromSQLQuery.size(); 
+         ++successCandidate) 
+    {
+      if (robotsCandidatesFromSQLQuery[successCandidate].success) {
+        // find robot data with same uid, iid
+        for (uint robotIndex = 0; robotIndex < count_robots; robotIndex++) {
+          const ChoiceRobotData *candidateRobot = robots_data[robotIndex];
+          const string currentIid(candidateRobot->module_data->iid);
+          const string currentUid(candidateRobot->robot_uid);
+      
+          if (!currentIid.compare(robotsCandidatesFromSQLQuery[successCandidate].iid) &&
+              !currentUid.compare(robotsCandidatesFromSQLQuery[successCandidate].uid)){
+            resultRobot = candidateRobot;
+          break;
+          }
+        }
+        // check is robot available
+        if (resultRobot->is_aviable){
+          break;
+        } else {
+          resultRobot = NULL;
         }
       }
     }
